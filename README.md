@@ -44,17 +44,17 @@ systemctl --user enable --now botmaker-remote
 journalctl --user -u botmaker-remote -f          # the pairing URL is in the log
 ```
 
-**Debian, Ubuntu**:
+**Debian, Ubuntu** — the apt line depends on whether the release was signed, so take it from
+[the repository page](https://liqiyedev.github.io/botmaker-remote-server/), which prints the snippet that
+matches what is actually published.
 
-```bash
-sudo install -d -m 755 /etc/apt/keyrings
-sudo curl -fsSL -o /etc/apt/keyrings/botmaker.asc \
-  https://liqiyedev.github.io/botmaker-remote-server/botmaker.asc
-echo "deb [signed-by=/etc/apt/keyrings/botmaker.asc] https://liqiyedev.github.io/botmaker-remote-server/deb stable main" \
-  | sudo tee /etc/apt/sources.list.d/botmaker-remote-server.list
-sudo apt-get update && sudo apt-get install botmaker-remote-server
-systemctl --user enable --now botmaker-remote
-```
+**Signing.** The repository is **unsigned today**: nothing verifies that a package came from this project,
+and `dnf` is told so — the generated `.repo` sets `gpgcheck=0` and `repo_gpgcheck=0`, and the apt line says
+`[trusted=yes]`. HTTPS proves who *served* the file, not who *built* it. If that is not a trade you want,
+install the release asset by hand, or `tools/install.sh` from a checkout. Signing is three secrets away
+(`GPG_KEY_ID`, `GPG_PASSPHRASE`, `GPG_PRIVATE_KEY` on this repository, the key `botmaker-cli`'s repository
+already uses): with them present the release job signs the rpm and both indexes, the page starts printing
+the verified snippets, and nothing else changes.
 
 Later: `sudo dnf upgrade botmaker-remote-server` (or apt's equivalent), then `systemctl --user restart
 botmaker-remote`. The repository carries the **latest release only** — it is an upgrade channel, not an

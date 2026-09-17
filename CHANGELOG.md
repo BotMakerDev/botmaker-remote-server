@@ -15,6 +15,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
   latest release only; the signing key is the one `botmaker-cli`'s repository already publishes. A separate
   index from the cli's rather than one serving both: a Pages site is built from the artifacts of the
   release that triggered it, so a shared index would make two repositories able to break each other.
+  **It is published unsigned for now**, and says so: the `.repo` sets `gpgcheck=0`/`repo_gpgcheck=0`, the
+  apt line is `[trusted=yes]`, and the page states that nothing verifies where a package came from. Setting
+  `GPG_KEY_ID`, `GPG_PASSPHRASE` and `GPG_PRIVATE_KEY` on the repository signs the rpm and both indexes on
+  the next release and switches every snippet to the verified form; nothing else changes.
 - **An rpm and a deb** (`packaging/nfpm.yaml`, one description for both, like `botmaker-cli`'s):
   installing the package puts `/usr/bin/botmaker-remote-server`,
   `/usr/bin/botmaker-remote-hook`, the jar under `/usr/share/botmaker/` and a systemd **user** unit on the

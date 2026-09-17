@@ -41,11 +41,16 @@ debs=("${ARTIFACTS}"/*.deb)
 RPM="${rpms[0]}"
 DEB="${debs[0]}"
 
+# Signing is OPTIONAL HERE and deliberately so, which is where this differs from botmaker-cli's script.
+# The maintainer's decision (2026-09-17) is to publish unsigned until there is a reason not to: the
+# packages are installed by the person who builds them, and turning the checks off is honest as long as
+# what is published SAYS SO — the .repo, the apt line and the page below all state it rather than implying
+# a verification nobody performed. Set the three secrets and the same run signs everything instead.
 SIGNING=0
 if [ "${BOTMAKER_SIGN:-0}" = "1" ] && [ -n "${GPG_KEY_ID:-}" ]; then
   SIGNING=1
 else
-  echo "::warning::signing not configured — publishing a repository nothing can verify."
+  echo "::notice::publishing an unsigned repository — clients are told so (gpgcheck=0, [trusted=yes])."
 fi
 
 # gpg in batch/loopback mode, matching how ci.yml imports the key.
@@ -112,9 +117,22 @@ if [ "${SIGNING}" = "1" ]; then
   gpg --export --armor "${GPG_KEY_ID}" > "${SITE}/botmaker.asc"
   rpm_gpg=$'gpgcheck=1\nrepo_gpgcheck=1\ngpgkey='"${PAGES_URL}/botmaker.asc"
   apt_opts="[signed-by=/etc/apt/keyrings/botmaker.asc] "
+  APT_KEY_STEP="sudo install -d -m 755 /etc/apt/keyrings
+sudo curl -fsSL -o /etc/apt/keyrings/botmaker.asc ${PAGES_URL}/botmaker.asc
+"
+  TRUST_NOTE="<p>Signed: <code>dnf</code> verifies the package's own header and this index, and
+<code>apt</code> verifies <code>InRelease</code>. The key is the one
+<a href=\"https://liqiyedev.github.io/botmaker-cli/\">botmaker-cli's repository</a> publishes.</p>"
 else
   rpm_gpg=$'gpgcheck=0\nrepo_gpgcheck=0'
   apt_opts="[trusted=yes] "
+  APT_KEY_STEP=""
+  TRUST_NOTE="<p><strong>This repository is unsigned.</strong> Nothing here proves a package came from this
+project — HTTPS proves who served the file, not who built it — so the snippets above turn the checks off
+rather than implying a verification nobody performed. If that is not a trade you want, take the
+<code>.rpm</code> from the
+<a href=\"https://github.com/${REPO_SLUG}/releases\">Releases</a> page, or install from a checkout with
+<code>tools/install.sh</code>.</p>"
 fi
 
 cat > "${SITE}/${PACKAGE}.repo" <<EOF
@@ -129,9 +147,7 @@ DNF_SNIPPET="sudo curl -fsSL -o /etc/yum.repos.d/${PACKAGE}.repo ${PAGES_URL}/${
 sudo dnf install ${PACKAGE}
 systemctl --user enable --now botmaker-remote"
 
-APT_SNIPPET="sudo install -d -m 755 /etc/apt/keyrings
-sudo curl -fsSL -o /etc/apt/keyrings/botmaker.asc ${PAGES_URL}/botmaker.asc
-echo \"deb ${apt_opts}${PAGES_URL}/deb stable main\" | sudo tee /etc/apt/sources.list.d/${PACKAGE}.list
+APT_SNIPPET="${APT_KEY_STEP}echo \"deb ${apt_opts}${PAGES_URL}/deb stable main\" | sudo tee /etc/apt/sources.list.d/${PACKAGE}.list
 sudo apt-get update && sudo apt-get install ${PACKAGE}
 systemctl --user enable --now botmaker-remote"
 
@@ -183,6 +199,7 @@ box, served to a phone over Tailscale. Install once, then update with your packa
 or use <code>tools/install.sh</code> from a checkout for the same four files under <code>~/.local</code>.</p>
 
 <footer>
+${TRUST_NOTE}
 <p>Installing starts nothing. The unit is a <strong>user</strong> unit — this program hands out a shell and
 runs <code>cswap</code> and <code>claude</code> as you, so it is your process, and
 <code>systemctl --user enable --now botmaker-remote</code> is where you consent to it listening. It binds

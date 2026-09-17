@@ -21,6 +21,11 @@ a package's own signature where apt trusts a signed index. The dnf/apt repositor
 there and is not copied here**. It is its own index rather than a shared one, because a Pages site is built
 from the artifacts of the release that triggered it.
 
+**The repository is unsigned, by decision, and every snippet it publishes says so** (2026-09-17). Signing
+is three secrets away and the script takes the other branch the moment they exist — what must not happen is
+the shape the cli hit: checks turned off while the page still reads as if something was verified. If you
+add signing, change nothing else; if you keep it unsigned, keep the notice.
+
 **The unit names the command, never a jar.** `packaging/botmaker-remote-server` resolves the jar
 (`$BOTMAKER_REMOTE_JAR` → `~/.local/lib/botmaker/` → `/usr/share/botmaker/`), so the package and
 `tools/install.sh` share **one** `botmaker-remote.service` — a second copy of a unit is two descriptions of
