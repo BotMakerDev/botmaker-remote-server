@@ -5,6 +5,23 @@ All notable changes to `botmaker-remote-server`.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this module uses
 [semantic versioning](https://semver.org/). `release.sh` refuses to cut a version with no section here.
 
+## [Unreleased]
+
+### Added
+
+- **`--pair` prints the pairing QR without binding anything.** The packaged unit runs `--quiet` and holds
+  port 7788, so the only way to see a QR code was to stop the very server the code pairs with. The QR is a
+  function of the address, the port and the token file — never of a socket — so `--pair` reads those three
+  and prints the same block a fresh start prints.
+
+### Changed
+
+- **A refused bind is a sentence.** `Could not bind <address>:<port>`, who holds it (`ss -ltnp`, so
+  `java (pid 247245)` rather than nothing), and the three ways out: stop the service, `--port N`, or
+  `--pair`. Jetty's stack trace named neither the port nor the program.
+- **`--quiet` keeps the `pair:` line** and drops the QR block only, so
+  `journalctl --user -u botmaker-remote` is a second way to pair again.
+
 ## [0.0.3] — 2026-09-17
 
 No source changes since v0.0.2; re-released for updated upstream pins.

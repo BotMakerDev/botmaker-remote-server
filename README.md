@@ -107,6 +107,27 @@ and never fails the hook when the server is down.
 subscribe to a topic, and start the server with `--ntfy https://ntfy.sh/<topic>` (in the unit:
 `Environment=ARGS=--quiet --ntfy https://ntfy.sh/<topic>`). Every *waiting* event lands as a notification.
 
+## Pairing again
+
+A phone that was wiped, a second phone, or a QR nobody scanned in time — the pairing code is not something
+the running server has to be stopped to see:
+
+```bash
+botmaker-remote-server --pair              # the QR, the URL and the token file; binds nothing
+journalctl --user -u botmaker-remote | grep -m1 '^pair:'    # the same URL, from the service's own log
+```
+
+`--pair` reads the address the server would bind (`tailscale0`, or `--bind`), the port and the token file,
+and prints what a fresh start prints. Nothing is served, so it works while the service is running — which
+is the case that matters, since the service holds the port.
+
+**If a start refuses the port**, it now says who has it and what to do: `systemctl --user stop
+botmaker-remote.service` to take it over, `--port N` to serve beside it, or `--pair` if the code was all
+that was wanted.
+
+The token itself is `~/.config/botmaker/remote/token`. Deleting it and restarting the server mints a new
+one — every paired phone then has to scan again, which is how a leaked URL is revoked.
+
 ## Sessions
 
 ```bash
