@@ -9,8 +9,14 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ### Added
 
+- **`sudo dnf install botmaker-remote-server`** — a dnf and an apt repository on GitHub Pages
+  (`.github/scripts/build-repo.sh`, `botmaker-cli`'s script with the names changed), so the server arrives
+  and updates with the rest of the system rather than by downloading a file. The repository carries the
+  latest release only; the signing key is the one `botmaker-cli`'s repository already publishes. A separate
+  index from the cli's rather than one serving both: a Pages site is built from the artifacts of the
+  release that triggered it, so a shared index would make two repositories able to break each other.
 - **An rpm and a deb** (`packaging/nfpm.yaml`, one description for both, like `botmaker-cli`'s):
-  `sudo dnf install ./botmaker-remote-server.rpm` puts `/usr/bin/botmaker-remote-server`,
+  installing the package puts `/usr/bin/botmaker-remote-server`,
   `/usr/bin/botmaker-remote-hook`, the jar under `/usr/share/botmaker/` and a systemd **user** unit on the
   machine, and the jar then updates with the system. Installing starts nothing — `systemctl --user enable
   --now botmaker-remote` is where a person consents to it listening, and it runs as them because it needs

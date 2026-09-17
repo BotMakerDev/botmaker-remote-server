@@ -101,6 +101,16 @@ jobs:
           rm -f "${RUNNER_TEMP}/botmaker-signing.asc"
           ls -la target/botmaker-remote-server.rpm target/botmaker-remote-server.deb
 
+      # The packages are what the dnf/apt repositories are built from, on a different runner.
+      - name: Upload the packages
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-packages
+          path: |
+            target/botmaker-remote-server.rpm
+            target/botmaker-remote-server.deb
+          if-no-files-found: error
+
       # The SAME script the umbrella's release gate reads (ChangelogGate): one extractor, two readers.
       - name: Extract the changelog section
         run: |
@@ -116,3 +126,65 @@ jobs:
           arguments: full-release
         env:
           JRELEASER_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # The dnf/apt repositories on GitHub Pages, so `sudo dnf install botmaker-remote-server` works and later
+  # versions arrive with the system's updates. botmaker-cli's job, with the names changed.
+  pages:
+    needs: release
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    # Job-level permissions replace the workflow's. deploy-pages needs id-token for its OIDC handshake.
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    # Pages allows one deployment at a time; queue rather than cancel, so a release never ends up with the
+    # previous tag left live because its own deploy was cancelled by a newer one.
+    concurrency:
+      group: pages
+      cancel-in-progress: false
+    env:
+      GPG_KEY_ID: ${{ secrets.GPG_KEY_ID }}
+    steps:
+      # Only for .github/scripts/build-repo.sh — nothing here is built from source.
+      - uses: actions/checkout@v4
+
+      - name: Download the packages
+        uses: actions/download-artifact@v4
+        with:
+          name: linux-packages
+          path: artifacts
+
+      # createrepo_c writes the dnf metadata; apt-ftparchive (apt-utils) writes Packages/Release.
+      - name: Install repository tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y createrepo-c apt-utils
+
+      - name: Import signing key
+        if: env.GPG_KEY_ID != ''
+        env:
+          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
+        run: |
+          mkdir -p ~/.gnupg && chmod 700 ~/.gnupg
+          echo "allow-loopback-pinentry" >> ~/.gnupg/gpg-agent.conf
+          gpgconf --reload gpg-agent || true
+          echo "$GPG_PRIVATE_KEY" | base64 -d | gpg --batch --import
+          echo "BOTMAKER_SIGN=1" >> "$GITHUB_ENV"
+
+      - name: Build dnf + apt repositories
+        env:
+          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+        run: bash .github/scripts/build-repo.sh artifacts site "${GITHUB_REF_NAME}"
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+      - id: deployment
+        uses: actions/deploy-pages@v4

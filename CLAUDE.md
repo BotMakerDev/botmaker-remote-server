@@ -16,7 +16,10 @@ artifact. It depends on nothing of ours: Javalin, pty4j, Jackson, ZXing. Reactor
 
 **Packaged with nfpm, not jpackage** (`packaging/nfpm.yaml`) — `botmaker-cli`'s argument, and its rpm
 signing rules: a headless jar with no desktop presence gains nothing from a bundled runtime, and dnf checks
-a package's own signature where apt trusts a signed index.
+a package's own signature where apt trusts a signed index. The dnf/apt repository on Pages
+(`.github/scripts/build-repo.sh`) is that repository's script with the names changed; **the reasoning lives
+there and is not copied here**. It is its own index rather than a shared one, because a Pages site is built
+from the artifacts of the release that triggered it.
 
 **The unit names the command, never a jar.** `packaging/botmaker-remote-server` resolves the jar
 (`$BOTMAKER_REMOTE_JAR` → `~/.local/lib/botmaker/` → `/usr/share/botmaker/`), so the package and

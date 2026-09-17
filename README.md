@@ -34,16 +34,33 @@ it should be typed. Never expose it through Tailscale Funnel.
 
 ## Install
 
-**Fedora, RHEL, openSUSE** — the rpm from the newest release:
+**Fedora, RHEL, openSUSE** — add the repository once, then it updates with the rest of the system:
 
 ```bash
-curl -fLO https://github.com/LiQiyeDev/botmaker-remote-server/releases/latest/download/botmaker-remote-server.rpm
-sudo dnf install ./botmaker-remote-server.rpm
+sudo curl -fsSL -o /etc/yum.repos.d/botmaker-remote-server.repo \
+  https://liqiyedev.github.io/botmaker-remote-server/botmaker-remote-server.repo
+sudo dnf install botmaker-remote-server
 systemctl --user enable --now botmaker-remote
 journalctl --user -u botmaker-remote -f          # the pairing URL is in the log
 ```
 
-**Debian, Ubuntu** — the same, with `botmaker-remote-server.deb` and `sudo apt install ./…`.
+**Debian, Ubuntu**:
+
+```bash
+sudo install -d -m 755 /etc/apt/keyrings
+sudo curl -fsSL -o /etc/apt/keyrings/botmaker.asc \
+  https://liqiyedev.github.io/botmaker-remote-server/botmaker.asc
+echo "deb [signed-by=/etc/apt/keyrings/botmaker.asc] https://liqiyedev.github.io/botmaker-remote-server/deb stable main" \
+  | sudo tee /etc/apt/sources.list.d/botmaker-remote-server.list
+sudo apt-get update && sudo apt-get install botmaker-remote-server
+systemctl --user enable --now botmaker-remote
+```
+
+Later: `sudo dnf upgrade botmaker-remote-server` (or apt's equivalent), then `systemctl --user restart
+botmaker-remote`. The repository carries the **latest release only** — it is an upgrade channel, not an
+archive; every version stays on the Releases page, and
+[`botmaker-remote-server.rpm`](https://github.com/LiQiyeDev/botmaker-remote-server/releases/latest/download/botmaker-remote-server.rpm)
+installs directly with `sudo dnf install ./botmaker-remote-server.rpm`.
 
 The package installs `/usr/bin/botmaker-remote-server`, `/usr/bin/botmaker-remote-hook`, the jar under
 `/usr/share/botmaker/` and a systemd **user** unit. It starts nothing: a server that hands out a shell
