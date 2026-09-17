@@ -44,7 +44,9 @@ enables a systemd user unit and prints the pairing URL. Needs `java` (21+), `tmu
 `cswap` + `claude` on `PATH` for new sessions.
 
 By hand instead: `java -jar botmaker-remote-server-all.jar [--port 7788] [--bind IP] [--token-file PATH]
-[--ntfy URL] [--quiet]` prints the QR and serves until killed.
+[--ntfy URL] [--big-qr] [--quiet]` prints the QR and serves until killed. The QR uses half-block glyphs,
+which an IDE run window (IntelliJ's console pads its lines) tears into stripes — `--big-qr` draws one
+full block per module instead, square anywhere.
 
 ## Hooks — the "Claude is waiting" badge
 

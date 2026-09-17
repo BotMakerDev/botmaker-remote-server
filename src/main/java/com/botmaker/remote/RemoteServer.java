@@ -9,7 +9,7 @@ import java.util.Optional;
 
 /**
  * {@code java -jar botmaker-remote-server-all.jar [--port 7788] [--bind <ip>] [--token-file <path>]
- * [--ntfy <topic url>] [--quiet]}
+ * [--ntfy <topic url>] [--big-qr] [--quiet]}
  *
  * <p>Starts, prints the pairing URL and its QR code, serves until killed. Meant to run as a systemd user
  * unit ({@code tools/botmaker-remote.service}); started by hand it prints the same and the QR is what the
@@ -31,13 +31,16 @@ public final class RemoteServer {
         return config.resolve("botmaker").resolve("remote").resolve("token");
     }
 
-    record Options(int port, Optional<String> bind, Path tokenFile, Optional<URI> ntfy, boolean quiet) {
+    /** {@code bigQr}: one row per module, for consoles that pad lines (IDE run windows). */
+    record Options(int port, Optional<String> bind, Path tokenFile, Optional<URI> ntfy, boolean bigQr,
+                   boolean quiet) {
 
         static Options parse(String[] args) {
             int port = DEFAULT_PORT;
             Optional<String> bind = Optional.empty();
             Path tokenFile = defaultTokenFile();
             Optional<URI> ntfy = Optional.empty();
+            boolean bigQr = false;
             boolean quiet = false;
             for (int i = 0; i < args.length; i++) {
                 switch (args[i]) {
@@ -45,11 +48,12 @@ public final class RemoteServer {
                     case "--bind" -> bind = Optional.of(args[++i]);
                     case "--token-file" -> tokenFile = Path.of(args[++i]);
                     case "--ntfy" -> ntfy = Optional.of(URI.create(args[++i]));
+                    case "--big-qr" -> bigQr = true;
                     case "--quiet" -> quiet = true;
                     default -> throw new IllegalArgumentException("unknown option " + args[i]);
                 }
             }
-            return new Options(port, bind, tokenFile, ntfy, quiet);
+            return new Options(port, bind, tokenFile, ntfy, bigQr, quiet);
         }
     }
 
@@ -59,7 +63,7 @@ public final class RemoteServer {
             options = Options.parse(args);
         } catch (RuntimeException e) {
             System.err.println("botmaker-remote-server: " + e.getMessage());
-            System.err.println("usage: --port N  --bind IP  --token-file PATH  --ntfy URL  --quiet");
+            System.err.println("usage: --port N  --bind IP  --token-file PATH  --ntfy URL  --big-qr  --quiet");
             System.exit(2);
             return;
         }
@@ -93,7 +97,7 @@ public final class RemoteServer {
         String url = "http://" + host + ":" + options.port() + "/?token=" + token.value();
         if (!options.quiet()) {
             System.out.println();
-            System.out.println(Qr.render(url));
+            System.out.println(Qr.render(url, options.bigQr()));
         }
         System.out.println("botmaker-remote-server " + version() + " on " + host + ":" + options.port());
         System.out.println("pair: " + url);

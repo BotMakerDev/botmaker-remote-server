@@ -13,7 +13,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
   account, each `cswap run <slot> -- claude` — to a phone over the Tailscale address: the window list
   with a `running` / `waiting` / `idle` state, opening and closing windows, typing into one without
   opening it, and the terminal itself as a PTY over WebSocket. Every request carries a pairing token
-  created once in `~/.config/botmaker/remote/token` and printed as a QR code at start.
+  created once in `~/.config/botmaker/remote/token` and printed as a QR code at start (`--big-qr` for
+  consoles that pad their lines, such as an IDE run window).
 - **Binds the tailnet or nothing.** Without a `tailscale0` address the server refuses to start; `--bind`
   is the typed override.
 - **Hooks.** `tools/claude-hook.sh` reports Claude Code's `Stop`, `Notification` and `UserPromptSubmit`
