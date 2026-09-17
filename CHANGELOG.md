@@ -5,7 +5,7 @@ All notable changes to `botmaker-remote-server`.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this module uses
 [semantic versioning](https://semver.org/). `release.sh` refuses to cut a version with no section here.
 
-## [Unreleased]
+## [0.0.3] — 2026-09-17
 
 No source changes since v0.0.2; re-released for updated upstream pins.
 
