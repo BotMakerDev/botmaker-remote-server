@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <!--
+      groupId is com.github.LiQiyeDev like every other module in the umbrella reactor, so the GAV here is
+      the GAV everywhere. Nothing resolves this module as a dependency: it is a PROGRAM, published as one
+      executable jar on its GitHub Release, and JitPack never builds it.
+    -->
+    <groupId>com.github.LiQiyeDev</groupId>
+    <artifactId>botmaker-remote-server</artifactId>
+    <version>0.0.0-SNAPSHOT</version>
+    <name>BotMaker Remote Server</name>
+    <description>
+        Phone access to the Claude Code terminals on a dev box: one tmux window per Claude account, served
+        as PTYs over WebSocket on the Tailscale interface, with the session list, the account picker and
+        the "Claude is waiting" hook the botmaker-remote app draws.
+    </description>
+
+    <properties>
+        <maven.compiler.release>25</maven.compiler.release>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <junit.version>5.10.2</junit.version>
+        <jackson.version>2.17.2</jackson.version>
+        <javalin.version>6.7.0</javalin.version>
+        <pty4j.version>0.13.10</pty4j.version>
+        <zxing.version>3.5.3</zxing.version>
+        <!-- The release version, injected by ci.yml from the tag; ${project.version} is the cosmetic
+             0.0.0-SNAPSHOT every module here carries. -->
+        <botmaker.remote.version>dev</botmaker.remote.version>
+    </properties>
+
+    <dependencies>
+        <!-- HTTP + WebSocket. The same server the SDK's Remote Pilot is built on. -->
+        <dependency>
+            <groupId>io.javalin</groupId>
+            <artifactId>javalin</artifactId>
+            <version>${javalin.version}</version>
+        </dependency>
+        <!--
+          A real pseudo-terminal per attached window. tmux needs one to draw at all, and the phone needs to
+          resize it: `script(1)` would give a PTY but no way to set its size from outside, which is the one
+          thing a rotating phone does constantly. The jar bundles its own natives (linux x86_64 and
+          aarch64), loaded through JNA — hence Enable-Native-Access in the manifest below.
+        -->
+        <dependency>
+            <groupId>org.jetbrains.pty4j</groupId>
+            <artifactId>pty4j</artifactId>
+            <version>${pty4j.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+            <version>${jackson.version}</version>
+        </dependency>
+        <!-- The pairing QR, drawn in the terminal the server starts in. -->
+        <dependency>
+            <groupId>com.google.zxing</groupId>
+            <artifactId>core</artifactId>
+            <version>${zxing.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-simple</artifactId>
+            <version>2.0.17</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <version>${junit.version}</version>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <!-- 3.11.0 and 3.5.1: the JitPack Maven 3.6.1 ceiling the umbrella CLAUDE.md records. JitPack
+                 never builds this module, but one set of pins across the reactor is one fact to keep. -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.11.0</version>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>3.2.5</version>
+            </plugin>
+            <!-- The executable jar, `all` classifier: what the GitHub Release carries and what the systemd
+                 unit runs. -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <version>3.5.1</version>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+                        <configuration>
+                            <shadedArtifactAttached>true</shadedArtifactAttached>
+                            <shadedClassifierName>all</shadedClassifierName>
+                            <createDependencyReducedPom>false</createDependencyReducedPom>
+                            <transformers>
+                                <transformer
+                                        implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                                    <mainClass>com.botmaker.remote.RemoteServer</mainClass>
+                                    <manifestEntries>
+                                        <Implementation-Title>botmaker-remote-server</Implementation-Title>
+                                        <Implementation-Version>${botmaker.remote.version}</Implementation-Version>
+                                        <!-- pty4j loads its natives through JNA; without this a JDK 24+
+                                             prints four WARNING lines on the first attach. -->
+                                        <Enable-Native-Access>ALL-UNNAMED</Enable-Native-Access>
+                                    </manifestEntries>
+                                </transformer>
+                                <transformer
+                                        implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
+                            </transformers>
+                            <filters>
+                                <filter>
+                                    <artifact>*:*</artifact>
+                                    <excludes>
+                                        <exclude>module-info.class</exclude>
+                                        <exclude>META-INF/*.SF</exclude>
+                                        <exclude>META-INF/*.DSA</exclude>
+                                        <exclude>META-INF/*.RSA</exclude>
+                                    </excludes>
+                                </filter>
+                            </filters>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+</project>

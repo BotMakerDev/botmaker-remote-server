@@ -1,0 +1,30 @@
+# systemd user unit — botmaker-remote-server, started at login, restarted if it dies.
+#
+#   mkdir -p ~/.config/systemd/user
+#   cp tools/botmaker-remote.service ~/.config/systemd/user/
+#   systemctl --user daemon-reload
+#   systemctl --user enable --now botmaker-remote
+#   journalctl --user -u botmaker-remote -f        # the pairing URL is in the log
+#
+# The jar path below is where `install.sh` puts it; edit it if the jar lives elsewhere. `--quiet` skips
+# the QR (a journal cannot show one) — `journalctl` prints the pairing URL, and the app takes a pasted URL.
+# Add `--ntfy https://ntfy.sh/<your-topic>` to Environment=ARGS for background notifications.
+#
+# PATH is set explicitly because a user service does not read the login shell's profile, and this program
+# needs `tmux`, `cswap` and `claude` on it — the same three the terminal it replaces had.
+
+[Unit]
+Description=BotMaker remote terminal server (Claude Code over Tailscale)
+After=network-online.target tailscaled.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+Environment=ARGS=--quiet
+Environment=PATH=%h/.local/bin:%h/.local/share/mise/shims:/usr/local/bin:/usr/bin:/bin
+ExecStart=/usr/bin/env java -jar %h/.local/lib/botmaker/botmaker-remote-server-all.jar $ARGS
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=default.target

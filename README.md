@@ -1,0 +1,85 @@
+# botmaker-remote-server
+
+Phone access to the Claude Code terminals on a dev box, over Tailscale. The server half of
+[botmaker-remote](https://github.com/LiQiyeDev/botmaker-remote), the phone app.
+
+**The problem it answers.** Claude Code's Remote Control binds one Claude account; switching accounts with
+[`cswap`](https://github.com/LiQiyeDev/cswap) ends the session. So the phone attaches to *terminals*
+instead: one tmux window per account, each running `cswap run <slot> -- claude`, and the phone opens
+whichever it likes. Nothing switches, so nothing disconnects.
+
+**What it is.** One executable jar. It serves, on the machine's Tailscale address only:
+
+| Route | What |
+|---|---|
+| `GET /api/sessions` | the tmux windows in session `claude`, each with `running` / `waiting` / `idle` |
+| `POST /api/sessions {slot}` | open a window running Claude under that `cswap` account |
+| `DELETE /api/sessions/{i}` | close one |
+| `POST /api/sessions/{i}/send {text}` or `{key}` | type into one without opening it (quick replies) |
+| `GET /api/accounts` | the `cswap` slots and their usage |
+| `WS /ws/term/{i}?cols=&rows=` | the terminal itself: a PTY on `tmux attach`, bytes both ways |
+| `WS /ws/events` | every state change, as JSON |
+| `POST /api/hook` | where Claude Code's own hooks report *turn finished* / *needs an answer* |
+
+Every request carries the pairing token (`X-Botmaker-Token`, `Authorization: Bearer`, or `?token=` on a
+WebSocket). The token is created once in `~/.config/botmaker/remote/token` (`0600`) and is in the pairing
+URL the server prints, as a QR code, when it starts.
+
+## Security, in one paragraph
+
+This is a shell on your machine. The server therefore **binds the `tailscale0` address and refuses to
+start without one**: on the tailnet, the token is a second lock behind WireGuard and your tailnet's ACLs.
+`--bind <ip>` overrides that, and it takes a full address on purpose — typing `0.0.0.0` is a decision, and
+it should be typed. Never expose it through Tailscale Funnel.
+
+## Install
+
+```bash
+git clone https://github.com/LiQiyeDev/botmaker-remote-server && cd botmaker-remote-server
+tools/install.sh                 # newest release; or tools/install.sh target/…-all.jar for a local build
+```
+
+That puts the jar under `~/.local/lib/botmaker/`, installs the hook as `~/.local/bin/botmaker-remote-hook`,
+enables a systemd user unit and prints the pairing URL. Needs `java` (21+), `tmux`, `tailscale`, and
+`cswap` + `claude` on `PATH` for new sessions.
+
+By hand instead: `java -jar botmaker-remote-server-all.jar [--port 7788] [--bind IP] [--token-file PATH]
+[--ntfy URL] [--quiet]` prints the QR and serves until killed.
+
+## Hooks — the "Claude is waiting" badge
+
+A terminal cannot tell a thinking Claude from one waiting for you; Claude Code's hooks can. Add to
+`~/.claude/settings.json`:
+
+```json
+{
+  "hooks": {
+    "Stop":             [{ "hooks": [{ "type": "command", "command": "botmaker-remote-hook" }] }],
+    "Notification":     [{ "hooks": [{ "type": "command", "command": "botmaker-remote-hook" }] }],
+    "UserPromptSubmit": [{ "hooks": [{ "type": "command", "command": "botmaker-remote-hook" }] }]
+  }
+}
+```
+
+The script reads the window index off `$TMUX_PANE`, so a Claude that is not under tmux sends nothing,
+and never fails the hook when the server is down.
+
+**Background notifications** need no push service of ours: install the [ntfy](https://ntfy.sh) app,
+subscribe to a topic, and start the server with `--ntfy https://ntfy.sh/<topic>` (in the unit:
+`Environment=ARGS=--quiet --ntfy https://ntfy.sh/<topic>`). Every *waiting* event lands as a notification.
+
+## Sessions
+
+```bash
+tmux new -d -s claude -n bgroisne 'cswap run 1 -- claude'    # one window per account, or
+tmux new-window -t claude -n other 'cswap run 2 -- claude'    # … the app's ＋ button does the same
+```
+
+The phone attaches through a **grouped session** of its own (`tmux new-session -t claude`), so opening
+window 2 on the phone does not swap the desktop terminal to window 2; the view is destroyed when the
+phone detaches.
+
+## Releasing
+
+From the umbrella: `./release.sh --remote-server <version>`. The GitHub Release carries
+`botmaker-remote-server-all.jar` under a stable name, which is what `tools/install.sh` downloads.

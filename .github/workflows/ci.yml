@@ -1,0 +1,87 @@
+name: CI
+
+# Two jobs: `build` on every push and PR, `release` on a version tag. No JitPack job — nothing resolves
+# this module as a dependency; the GitHub Release's jar is the artifact.
+#
+# No upstream is built from source: this module depends on nothing of ours. Tests spawn no process —
+# what they hold is the three text formats read (tmux, cswap, ip) and the two guards (token, activity).
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '25'
+          cache: maven
+
+      - name: Build and test
+        run: mvn -B verify
+
+      # The shaded jar has to start: a shade configuration that loses the manifest transformer builds,
+      # publishes, and answers `no main manifest attribute` to the first person who downloads it. With no
+      # tailscale0 on the runner and no --bind the server refuses to start — exit 1 with the sentence — and
+      # that refusal is the assertion.
+      - name: The executable jar starts and refuses to bind the world
+        run: |
+          set +e
+          out=$(java -jar target/botmaker-remote-server-0.0.0-SNAPSHOT-all.jar 2>&1)
+          code=$?
+          set -e
+          echo "$out"
+          [ "$code" = "1" ] && echo "$out" | grep -q "binds the tailnet or nothing"
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '25'
+          cache: maven
+
+      # Shade names the jar from the pom's cosmetic 0.0.0-SNAPSHOT whatever the tag says; rename it once,
+      # here, to the name jreleaser.yml and tools/install.sh both use. The tag reaches the manifest through
+      # -Dbotmaker.remote.version so `/api/status` reports the release rather than "dev".
+      - name: Build the executable jar
+        run: |
+          mvn -B package -DskipTests "-Dbotmaker.remote.version=${GITHUB_REF_NAME#v}"
+          shaded=target/botmaker-remote-server-0.0.0-SNAPSHOT-all.jar
+          if [ ! -f "$shaded" ]; then
+            echo "::error::$shaded was not produced — maven-shade-plugin attached nothing." >&2
+            ls -la target >&2
+            exit 1
+          fi
+          mv "$shaded" target/botmaker-remote-server-all.jar
+
+      # The SAME script the umbrella's release gate reads (ChangelogGate): one extractor, two readers.
+      - name: Extract the changelog section
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          mkdir -p target
+          tools/changelog-section.sh "$version" > target/jreleaser-changelog.md
+          echo "JRELEASER_PROJECT_VERSION=$version" >> "$GITHUB_ENV"
+
+      - name: Publish the release
+        uses: jreleaser/release-action@v2
+        with:
+          version: 1.25.0
+          arguments: full-release
+        env:
+          JRELEASER_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -1,0 +1,48 @@
+# JReleaser — what ONE release of this repository looks like: the tag, the GitHub Release, the notes and
+# the one asset on it. The umbrella's release library decides WHEN and in what order; see its CLAUDE.md.
+#
+# WHERE THIS RUNS: this repository's own CI, on a version tag (.github/workflows/ci.yml, `release` job).
+# Not from the umbrella working copy, where a submodule's `.git` is a file JGit cannot open.
+#
+# THE VERSION ARRIVES AS JRELEASER_PROJECT_VERSION, set by the workflow from the tag.
+
+project:
+  name: botmaker-remote-server
+  description: Phone access to the Claude Code terminals on a dev box, over Tailscale.
+  longDescription: |
+    The server half of botmaker-remote. Serves the tmux session `claude` — one window per Claude account —
+    as PTYs over WebSocket on the Tailscale address, with the session list, the account picker and the
+    "Claude is waiting" hook the phone app draws.
+  authors:
+    - LiQiyeDev
+  license: CC0-1.0
+  copyright: LiQiyeDev
+  inceptionYear: '2026'
+  links:
+    homepage: https://github.com/LiQiyeDev/botmaker-remote-server
+  languages:
+    java:
+      groupId: com.github.LiQiyeDev
+      artifactId: botmaker-remote-server
+      version: '21'
+
+release:
+  github:
+    owner: LiQiyeDev
+    name: botmaker-remote-server
+    tagName: 'v{{projectVersion}}'
+    releaseName: 'v{{projectVersion}}'
+    skipTag: true
+    overwrite: false
+    update:
+      enabled: false
+    changelog:
+      external: target/jreleaser-changelog.md
+
+files:
+  artifacts:
+    # Unversioned, and the workflow renames the shaded jar to this before JReleaser runs: shade names the
+    # jar from the pom's cosmetic 0.0.0-SNAPSHOT, never from the tag, and tools/install.sh downloads
+    # `releases/latest/download/botmaker-remote-server-all.jar`. Never template projectVersion onto a path
+    # in target/ (botmaker-cli v0.0.1 lost its asset that way).
+    - path: target/botmaker-remote-server-all.jar
