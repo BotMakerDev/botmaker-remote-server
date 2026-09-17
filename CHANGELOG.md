@@ -16,6 +16,11 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ### Changed
 
+- **`docs/signing.md` says how this repository gets signed**, with the key `botmaker-cli`'s Pages site
+  already publishes (`5300F1BC092474AC`): the three secrets, how to export the key without it passing
+  through a terminal, the re-run that republishes the site, and what an already-installed machine must
+  import once `gpgcheck` goes on. No workflow changed — it takes the signed branch the moment the secrets
+  exist.
 - **A refused bind is a sentence.** `Could not bind <address>:<port>`, who holds it (`ss -ltnp`, so
   `java (pid 247245)` rather than nothing), and the three ways out: stop the service, `--port N`, or
   `--pair`. Jetty's stack trace named neither the port nor the program.

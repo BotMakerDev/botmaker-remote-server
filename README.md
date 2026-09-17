@@ -54,7 +54,9 @@ and `dnf` is told so — the generated `.repo` sets `gpgcheck=0` and `repo_gpgch
 install the release asset by hand, or `tools/install.sh` from a checkout. Signing is three secrets away
 (`GPG_KEY_ID`, `GPG_PASSPHRASE`, `GPG_PRIVATE_KEY` on this repository, the key `botmaker-cli`'s repository
 already uses): with them present the release job signs the rpm and both indexes, the page starts printing
-the verified snippets, and nothing else changes.
+the verified snippets, and nothing else changes. The steps are in
+[`docs/signing.md`](docs/signing.md), including what an already-installed machine has to import when
+`gpgcheck` goes on.
 
 Later: `sudo dnf upgrade botmaker-remote-server` (or apt's equivalent), then `systemctl --user restart
 botmaker-remote`. The repository carries the **latest release only** — it is an upgrade channel, not an

@@ -24,7 +24,9 @@ from the artifacts of the release that triggered it.
 **The repository is unsigned, by decision, and every snippet it publishes says so** (2026-09-17). Signing
 is three secrets away and the script takes the other branch the moment they exist — what must not happen is
 the shape the cli hit: checks turned off while the page still reads as if something was verified. If you
-add signing, change nothing else; if you keep it unsigned, keep the notice.
+add signing, change nothing else; if you keep it unsigned, keep the notice. **`docs/signing.md` is the
+procedure** — the same key `botmaker-cli` already publishes, set by the maintainer from their own keyring;
+no assistant session ever reads a secret value, and none of the workflow changes when they appear.
 
 **The unit names the command, never a jar.** `packaging/botmaker-remote-server` resolves the jar
 (`$BOTMAKER_REMOTE_JAR` → `~/.local/lib/botmaker/` → `/usr/share/botmaker/`), so the package and
