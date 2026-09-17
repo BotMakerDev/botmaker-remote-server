@@ -1,9 +1,14 @@
 #!/usr/bin/env bash
 #
-# install.sh [jar] — put the server where the systemd unit expects it, install the unit and the hook.
+# install.sh [jar] — install the server, its launcher, the unit and the hook under ~/.local, for one user.
 #
 # With no argument, downloads the newest release's jar; with one, copies that file (a local build:
 # target/botmaker-remote-server-0.0.0-SNAPSHOT-all.jar). Idempotent: run it again to update.
+#
+# On Fedora or any dnf/apt machine there is a package instead — `botmaker-remote-server.rpm` /`.deb` on the
+# GitHub Release — and it installs the same four files system-wide. This script stays for the case the
+# package cannot serve: a build from a checkout, and a machine where the person has no root. Both may be
+# installed at once; the launcher prefers this jar, so a local build shadows the packaged one.
 
 set -euo pipefail
 
@@ -21,6 +26,11 @@ else
 fi
 cp "$here/claude-hook.sh" "$bin/botmaker-remote-hook"
 chmod +x "$bin/botmaker-remote-hook"
+# The unit runs `botmaker-remote-server` off PATH, so the launcher is part of the installation rather than
+# a nicety — and having it on PATH is also what makes running the server by hand the same command as the
+# service's.
+cp "$here/../packaging/botmaker-remote-server" "$bin/botmaker-remote-server"
+chmod +x "$bin/botmaker-remote-server"
 cp "$here/botmaker-remote.service" "$units/botmaker-remote.service"
 
 systemctl --user daemon-reload

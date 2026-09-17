@@ -9,6 +9,17 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ### Added
 
+- **An rpm and a deb** (`packaging/nfpm.yaml`, one description for both, like `botmaker-cli`'s):
+  `sudo dnf install ./botmaker-remote-server.rpm` puts `/usr/bin/botmaker-remote-server`,
+  `/usr/bin/botmaker-remote-hook`, the jar under `/usr/share/botmaker/` and a systemd **user** unit on the
+  machine, and the jar then updates with the system. Installing starts nothing — `systemctl --user enable
+  --now botmaker-remote` is where a person consents to it listening, and it runs as them because it needs
+  their PATH, their `~/.claude` and their tmux server. `java-25-openjdk-headless` and `tmux` are hard
+  dependencies; `cswap` and `claude` are per-user installs no distribution ships.
+- **`botmaker-remote-server` is a command now** (`packaging/botmaker-remote-server`), on `PATH` from either
+  installation. It resolves the jar itself — `$BOTMAKER_REMOTE_JAR`, then `~/.local/lib/botmaker/`, then
+  `/usr/share/botmaker/` — which is what lets one systemd unit serve the package and `tools/install.sh`
+  alike, and lets a local build shadow the packaged jar with nothing uninstalled.
 - **The server.** One executable jar that serves the tmux session `claude` — one window per Claude
   account, each `cswap run <slot> -- claude` — to a phone over the Tailscale address: the window list
   with a `running` / `waiting` / `idle` state, opening and closing windows, typing into one without

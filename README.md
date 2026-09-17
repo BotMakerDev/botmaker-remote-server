@@ -34,14 +34,34 @@ it should be typed. Never expose it through Tailscale Funnel.
 
 ## Install
 
+**Fedora, RHEL, openSUSE** — the rpm from the newest release:
+
+```bash
+curl -fLO https://github.com/LiQiyeDev/botmaker-remote-server/releases/latest/download/botmaker-remote-server.rpm
+sudo dnf install ./botmaker-remote-server.rpm
+systemctl --user enable --now botmaker-remote
+journalctl --user -u botmaker-remote -f          # the pairing URL is in the log
+```
+
+**Debian, Ubuntu** — the same, with `botmaker-remote-server.deb` and `sudo apt install ./…`.
+
+The package installs `/usr/bin/botmaker-remote-server`, `/usr/bin/botmaker-remote-hook`, the jar under
+`/usr/share/botmaker/` and a systemd **user** unit. It starts nothing: a server that hands out a shell
+should listen because somebody enabled it, and it runs as *you* — it needs your PATH, your `~/.claude` and
+your tmux server, which a root service would not have. `java` and `tmux` come with it; `tailscale` is
+assumed, and `cswap` + `claude` are per-user installs the "new session" screen needs.
+
+**Any Linux, no root** — the same four files under `~/.local`:
+
 ```bash
 git clone https://github.com/LiQiyeDev/botmaker-remote-server && cd botmaker-remote-server
 tools/install.sh                 # newest release; or tools/install.sh target/…-all.jar for a local build
+systemctl --user enable --now botmaker-remote   # install.sh does this for you
 ```
 
-That puts the jar under `~/.local/lib/botmaker/`, installs the hook as `~/.local/bin/botmaker-remote-hook`,
-enables a systemd user unit and prints the pairing URL. Needs `java` (21+), `tmux`, `tailscale`, and
-`cswap` + `claude` on `PATH` for new sessions.
+Both may be installed at once — the launcher prefers `~/.local/lib/botmaker/botmaker-remote-server-all.jar`,
+so a local build shadows the packaged one without uninstalling anything, and `BOTMAKER_REMOTE_JAR=<path>`
+beats both.
 
 By hand instead: `java -jar botmaker-remote-server-all.jar [--port 7788] [--bind IP] [--token-file PATH]
 [--ntfy URL] [--big-qr] [--quiet]` prints the QR and serves until killed. The QR uses half-block glyphs,

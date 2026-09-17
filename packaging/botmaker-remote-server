@@ -1,0 +1,36 @@
+#!/bin/sh
+# The `botmaker-remote-server` command, installed at /usr/bin/botmaker-remote-server by the packages and
+# at ~/.local/bin/botmaker-remote-server by tools/install.sh.
+#
+# It exists so that ONE systemd unit works for both installations. The unit runs this name off PATH; where
+# the jar actually landed is this script's problem, not the unit's — otherwise the package and the script
+# would each need their own copy of the unit, which is two descriptions of one service.
+#
+# The search order is most-specific first: an explicitly named jar, then a per-user install (which a person
+# updates without root), then the system package. BOTMAKER_REMOTE_JAR is also how you run a build from a
+# checkout under the unit.
+#
+# `exec` so the JVM replaces this shell: systemd then supervises the JVM itself rather than a shell that
+# outlives nothing, and SIGTERM reaches the server on `systemctl --user stop`.
+#
+# BOTMAKER_JAVA is for a machine with several runtimes and the wrong one first on PATH — the same variable
+# the `botmaker` command reads, deliberately: one name to learn.
+set -eu
+
+for candidate in \
+    "${BOTMAKER_REMOTE_JAR:-}" \
+    "$HOME/.local/lib/botmaker/botmaker-remote-server-all.jar" \
+    /usr/share/botmaker/botmaker-remote-server-all.jar
+do
+    [ -n "$candidate" ] && [ -f "$candidate" ] && JAR="$candidate" && break
+done
+
+if [ -z "${JAR:-}" ]; then
+    echo "botmaker-remote-server: no jar found. Looked at \$BOTMAKER_REMOTE_JAR," >&2
+    echo "  $HOME/.local/lib/botmaker/botmaker-remote-server-all.jar and" >&2
+    echo "  /usr/share/botmaker/botmaker-remote-server-all.jar." >&2
+    exit 1
+fi
+
+# shellcheck disable=SC2086
+exec "${BOTMAKER_JAVA:-java}" ${BOTMAKER_JAVA_OPTS:-} -jar "$JAR" "$@"

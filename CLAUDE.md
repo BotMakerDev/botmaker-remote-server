@@ -10,9 +10,19 @@ The server half of the phone app `botmaker-remote`: one executable jar that serv
 Tailscale address. `README.md` is the operator's document and lists the routes; this file is the rules.
 
 **A program, not a library.** Nothing resolves it as a dependency, JitPack never builds it, and the GitHub
-Release's `botmaker-remote-server-all.jar` (stable name — `tools/install.sh` downloads
-`releases/latest/download/…`) is the artifact. It depends on nothing of ours: Javalin, pty4j, Jackson,
-ZXing. Reactor position after `botmaker-cli`; released with `./release.sh --remote-server`.
+Release's three assets — `botmaker-remote-server-all.jar`, `.rpm`, `.deb`, all unversioned names — are the
+artifact. It depends on nothing of ours: Javalin, pty4j, Jackson, ZXing. Reactor position after
+`botmaker-cli`; released with `./release.sh --remote-server`.
+
+**Packaged with nfpm, not jpackage** (`packaging/nfpm.yaml`) — `botmaker-cli`'s argument, and its rpm
+signing rules: a headless jar with no desktop presence gains nothing from a bundled runtime, and dnf checks
+a package's own signature where apt trusts a signed index.
+
+**The unit names the command, never a jar.** `packaging/botmaker-remote-server` resolves the jar
+(`$BOTMAKER_REMOTE_JAR` → `~/.local/lib/botmaker/` → `/usr/share/botmaker/`), so the package and
+`tools/install.sh` share **one** `botmaker-remote.service` — a second copy of a unit is two descriptions of
+one service. It is a **user** unit and the package enables nothing: this program hands out a shell and runs
+`cswap`/`claude` as the operator, so it is their process and their decision to start it.
 
 ## The rules
 

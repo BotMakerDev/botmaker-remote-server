@@ -1,0 +1,92 @@
+# One description, two packages: botmaker-remote-server.rpm and .deb.
+#
+# WHY nfpm AND NOT jpackage, which botmaker-studio uses: jpackage bundles a Java runtime and generates a
+# launcher, a desktop entry, an icon and MIME registration around an app-image. This is a headless server —
+# a 14 MB jar, a three-line launcher, a hook script and a systemd unit, with no desktop presence at all.
+# The reasoning is botmaker-cli's, in its own packaging/nfpm.yaml, and is not repeated here.
+#
+# WHY A PACKAGE AT ALL, when tools/install.sh already puts the same files under ~/.local: because the jar
+# then updates with the system rather than by re-running a script, and because a service belongs where the
+# service manager already looks. The two installations coexist on purpose — the launcher prefers the
+# per-user jar, so a maintainer testing a build shadows the packaged one without uninstalling anything.
+#
+# THE SYSTEMD UNIT IS A USER UNIT, and that is a security decision rather than a convenience. This program
+# hands out a shell and starts `claude` under the operator's own `cswap` accounts; it has to run as that
+# person, with their PATH, their ~/.claude and their tmux server. A system unit would run it as root for
+# nobody's benefit. Installing the package therefore starts nothing: the person enables it themselves with
+# `systemctl --user enable --now botmaker-remote`, which is also where they consent to the thing listening.
+#
+# THE VERSION comes from the environment, like the cli's: the pom's <version> is the cosmetic
+# 0.0.0-SNAPSHOT, and the workflow sets BOTMAKER_VERSION from the tag that triggered it.
+#
+# THE RPM IS SIGNED WHEN A KEY IS PRESENT and the deb is not — dnf's `gpgcheck` verifies the package's own
+# header signature, apt trusts a signed index. Both facts are botmaker-cli's, discovered by its v0.0.3
+# refusing to install; the same secrets and the same empty-key tolerance are used here.
+
+name: botmaker-remote-server
+arch: all
+platform: linux
+version: ${BOTMAKER_VERSION}
+version_schema: none
+section: devel
+priority: optional
+maintainer: LiQiyeDev <bgroisne@proton.me>
+description: |
+  The Claude Code terminals on this machine, served to a phone over Tailscale.
+  One tmux window per Claude account, as PTYs over WebSocket, behind a pairing token.
+  Pairs with the botmaker-remote app.
+vendor: BotMaker
+homepage: https://github.com/LiQiyeDev/botmaker-remote-server
+license: CC0-1.0
+
+contents:
+  - src: target/botmaker-remote-server-all.jar
+    dst: /usr/share/botmaker/botmaker-remote-server-all.jar
+
+  - src: packaging/botmaker-remote-server
+    dst: /usr/bin/botmaker-remote-server
+    file_info:
+      mode: 0755
+
+  # The Claude Code hook, under the name README.md tells people to put in ~/.claude/settings.json. It is a
+  # program a person wires up, so it goes in /usr/bin like any other: a hook buried in /usr/share would
+  # have to be named by an absolute path in a settings file, and that path would be this package's business
+  # rather than the user's.
+  - src: tools/claude-hook.sh
+    dst: /usr/bin/botmaker-remote-hook
+    file_info:
+      mode: 0755
+
+  # A user unit, shipped where systemd looks for one for every user on the machine. `systemctl --user
+  # enable --now botmaker-remote` is the whole of the installation ceremony, and a ~/.config/systemd/user
+  # unit of the same name still wins — which is what lets tools/install.sh's copy keep working.
+  - src: tools/botmaker-remote.service
+    dst: /usr/lib/systemd/user/botmaker-remote.service
+
+  - src: README.md
+    dst: /usr/share/doc/botmaker-remote-server/README.md
+  - src: CHANGELOG.md
+    dst: /usr/share/doc/botmaker-remote-server/CHANGELOG.md
+  - src: LICENSE
+    dst: /usr/share/doc/botmaker-remote-server/LICENSE
+
+rpm:
+  signature:
+    key_file: ${NFPM_RPM_KEY_FILE}
+
+overrides:
+  # A JRE, and 25 rather than 21: this module compiles with maven.compiler.release 25, so an older runtime
+  # answers UnsupportedClassVersionError at startup. Headless: there is no UI here.
+  #
+  # tmux is a hard dependency and not a weak one — `Tmux` is every screen this program serves, and it
+  # refuses to start without it, by name, on purpose. `cswap` and `claude` are neither: they are installed
+  # per user (~/.local/bin), no distribution packages them, and the server runs perfectly without them —
+  # it says so at startup and the "new session" screen is what stops working.
+  rpm:
+    depends:
+      - java-25-openjdk-headless
+      - tmux
+  deb:
+    depends:
+      - openjdk-25-jre-headless | java25-runtime-headless
+      - tmux

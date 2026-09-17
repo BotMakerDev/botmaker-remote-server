@@ -1,17 +1,30 @@
-# systemd user unit — botmaker-remote-server, started at login, restarted if it dies.
+# systemd USER unit — botmaker-remote-server, started at login, restarted if it dies.
 #
-#   mkdir -p ~/.config/systemd/user
-#   cp tools/botmaker-remote.service ~/.config/systemd/user/
-#   systemctl --user daemon-reload
+# Installed for every user by the rpm/deb (at /usr/lib/systemd/user/), or for one by tools/install.sh
+# (~/.config/systemd/user/, which wins over the packaged copy). Either way:
+#
 #   systemctl --user enable --now botmaker-remote
 #   journalctl --user -u botmaker-remote -f        # the pairing URL is in the log
 #
-# The jar path below is where `install.sh` puts it; edit it if the jar lives elsewhere. `--quiet` skips
-# the QR (a journal cannot show one) — `journalctl` prints the pairing URL, and the app takes a pasted URL.
-# Add `--ntfy https://ntfy.sh/<your-topic>` to Environment=ARGS for background notifications.
+# A USER unit, not a system one: this program hands out a shell and starts `claude` under the operator's
+# own cswap accounts, so it has to be that person's process, with their PATH, their ~/.claude and their
+# tmux server. Installing the package starts nothing — enabling it is where a person consents to it
+# listening.
+#
+# ExecStart names the COMMAND and not a jar. Where the jar is depends on how it was installed, and that is
+# the launcher's problem (packaging/botmaker-remote-server, which prefers $BOTMAKER_REMOTE_JAR, then the
+# per-user jar, then /usr/share) — otherwise the package and the script would each need their own unit,
+# which is two descriptions of one service.
+#
+# `--quiet` skips the QR, because a journal cannot show one; `journalctl` prints the pairing URL and the app
+# takes a pasted URL. Add `--ntfy https://ntfy.sh/<your-topic>` to Environment=ARGS for background
+# notifications, or override it without editing this file:
+#
+#   systemctl --user edit botmaker-remote      # [Service] Environment=ARGS=--quiet --ntfy https://…
 #
 # PATH is set explicitly because a user service does not read the login shell's profile, and this program
-# needs `tmux`, `cswap` and `claude` on it — the same three the terminal it replaces had.
+# needs `tmux`, `cswap` and `claude` on it — the same three the terminal it replaces had. ~/.local/bin is
+# first so a per-user install of the launcher shadows the packaged one.
 
 [Unit]
 Description=BotMaker remote terminal server (Claude Code over Tailscale)
@@ -22,7 +35,7 @@ Wants=network-online.target
 Type=simple
 Environment=ARGS=--quiet
 Environment=PATH=%h/.local/bin:%h/.local/share/mise/shims:/usr/local/bin:/usr/bin:/bin
-ExecStart=/usr/bin/env java -jar %h/.local/lib/botmaker/botmaker-remote-server-all.jar $ARGS
+ExecStart=/usr/bin/env botmaker-remote-server $ARGS
 Restart=on-failure
 RestartSec=5
 

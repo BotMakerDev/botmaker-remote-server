@@ -46,3 +46,7 @@ files:
     # `releases/latest/download/botmaker-remote-server-all.jar`. Never template projectVersion onto a path
     # in target/ (botmaker-cli v0.0.1 lost its asset that way).
     - path: target/botmaker-remote-server-all.jar
+    # The packages, built by the same job from packaging/nfpm.yaml. Unversioned for the same reason, and
+    # `sudo dnf install ./botmaker-remote-server.rpm` is what the README tells a Fedora user to run.
+    - path: target/botmaker-remote-server.rpm
+    - path: target/botmaker-remote-server.deb

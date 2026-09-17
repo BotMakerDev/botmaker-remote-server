@@ -70,6 +70,37 @@ jobs:
           fi
           mv "$shaded" target/botmaker-remote-server-all.jar
 
+      # rpm + deb from ONE description, with a single Go binary rather than rpmbuild (absent from
+      # ubuntu-latest), fakeroot, a .spec and a debian/ directory. See packaging/nfpm.yaml for why not
+      # jpackage. The names are unversioned, like the jar's, because the README links
+      # releases/latest/download/<name>.
+      #
+      # The rpm is signed when the secrets are present and unsigned otherwise — dnf refuses an unsigned
+      # package under gpgcheck=1, and a fork's tag build has no key. Same handling as botmaker-cli's.
+      - name: Build the rpm and the deb
+        env:
+          NFPM_VERSION: '2.43.0'
+          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
+          NFPM_RPM_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+        run: |
+          curl -fsSL -o /tmp/nfpm.tar.gz \
+            "https://github.com/goreleaser/nfpm/releases/download/v${NFPM_VERSION}/nfpm_${NFPM_VERSION}_Linux_x86_64.tar.gz"
+          tar -xzf /tmp/nfpm.tar.gz -C /tmp nfpm
+          # The tag, not the pom: this pom's <version> is the cosmetic 0.0.0-SNAPSHOT.
+          export BOTMAKER_VERSION="${GITHUB_REF_NAME#v}"
+          export NFPM_RPM_KEY_FILE=""
+          if [ -n "$GPG_PRIVATE_KEY" ]; then
+            NFPM_RPM_KEY_FILE="${RUNNER_TEMP}/botmaker-signing.asc"
+            printf '%s' "$GPG_PRIVATE_KEY" | base64 -d > "$NFPM_RPM_KEY_FILE"
+            export NFPM_RPM_KEY_FILE
+          else
+            echo "::warning::GPG_PRIVATE_KEY is unset — building an rpm that dnf will refuse under gpgcheck=1."
+          fi
+          /tmp/nfpm package -f packaging/nfpm.yaml -p rpm -t target/botmaker-remote-server.rpm
+          /tmp/nfpm package -f packaging/nfpm.yaml -p deb -t target/botmaker-remote-server.deb
+          rm -f "${RUNNER_TEMP}/botmaker-signing.asc"
+          ls -la target/botmaker-remote-server.rpm target/botmaker-remote-server.deb
+
       # The SAME script the umbrella's release gate reads (ChangelogGate): one extractor, two readers.
       - name: Extract the changelog section
         run: |
