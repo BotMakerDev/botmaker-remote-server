@@ -22,17 +22,30 @@ is those three secrets on **this** repository:
 A GitHub secret can be written and never read back, so the values come from the key in your own keyring —
 not from `botmaker-cli`'s settings page.
 
-## Copy the key across, with the GUI
+## Copy the key across
+
+The umbrella's **`tools/signing-secret.sh`** is the whole procedure:
+
+```bash
+tools/signing-secret.sh --repo LiQiyeDev/botmaker-remote-server   # one repository
+tools/signing-secret.sh --org <org>                               # every repository in an organization
+tools/signing-secret.sh --org <org> --dry-run                     # rehearse it, no gh call
+```
+
+It finds the secret keys in your keyring, makes you choose when there is more than one, prints the
+fingerprint to compare by eye, refuses a key that is expired, revoked or disabled, and then pipes the
+export straight into `gh` — no file, no shell history, no value as an argument (arguments are readable in
+`/proc`). The passphrase is typed twice and never echoed. It ends by listing the three secret **names** it
+set, which is all GitHub will ever give back.
+
+### The same thing by hand, which is what the script does
 
 1. Open **Passwords and Keys** (Seahorse; KDE: **Kleopatra**) and find **GPG Keys ▸
    `LiQiyeDev <liqiyedev@users.noreply.github.com>`**. Check it is `5300F1BC092474AC`: *Properties ▸
    Details ▸ Fingerprint* ends `5300 F1BC 0924 74AC`. (Kleopatra: the *Key-ID* column.)
 2. Right-click ▸ **Export Secret Keys…** ▸ save as `botmaker-signing.asc` in a directory only you can read
    (`~/` is fine; a shared `/tmp` is not). Kleopatra: right-click ▸ *Backup Secret Keys…*, ASCII armor on.
-3. In a terminal, in that directory. The umbrella's `tools/signing-secret.sh` does the export, the
-   base64 and the `gh secret set` in one line and leaves nothing on disk — `tools/signing-secret.sh
-   LiQiyeDev/botmaker-remote-server` — and checks that what it exported really is a private key. By
-   hand it is:
+3. In a terminal, in that directory:
 
    ```bash
    base64 -w0 botmaker-signing.asc > botmaker-signing.b64
