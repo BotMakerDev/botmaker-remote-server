@@ -5,6 +5,16 @@ All notable changes to `botmaker-remote-server`.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this module uses
 [semantic versioning](https://semver.org/). `release.sh` refuses to cut a version with no section here.
 
+## [Unreleased]
+
+### Changed
+
+- **The package page looks like the rest of the project, and its commands copy.** The stylesheet and the
+  copy button come from `botmakerdev.github.io/assets/`, the organization's front page — the same origin
+  this site is served from — rather than from a `<style>` block repeated in four repositories, and the page
+  links to that front page, where one command installs every BotMaker tool at once. The unsigned-repository
+  notice, the repository itself and the snippets are untouched.
+
 ## [0.0.5] — 2026-09-19
 
 ### Changed
