@@ -22,7 +22,7 @@ if [ $# -ge 1 ]; then
   cp "$1" "$lib/botmaker-remote-server-all.jar"
 else
   curl -fsSL -o "$lib/botmaker-remote-server-all.jar" \
-    https://github.com/LiQiyeDev/botmaker-remote-server/releases/latest/download/botmaker-remote-server-all.jar
+    https://github.com/BotMakerDev/botmaker-remote-server/releases/latest/download/botmaker-remote-server-all.jar
 fi
 cp "$here/claude-hook.sh" "$bin/botmaker-remote-hook"
 chmod +x "$bin/botmaker-remote-hook"

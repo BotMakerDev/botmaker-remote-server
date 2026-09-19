@@ -36,7 +36,7 @@ description: |
   One tmux window per Claude account, as PTYs over WebSocket, behind a pairing token.
   Pairs with the botmaker-remote app.
 vendor: BotMaker
-homepage: https://github.com/LiQiyeDev/botmaker-remote-server
+homepage: https://github.com/BotMakerDev/botmaker-remote-server
 license: CC0-1.0
 
 contents:
