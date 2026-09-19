@@ -88,4 +88,11 @@ class ParsingTest {
                 Tailnet.parse("5: tailscale0    inet 100.75.38.1/32 scope global tailscale0\\       valid_lft forever"));
         assertEquals(Optional.empty(), Tailnet.parse(""));
     }
+
+    @Test
+    void reportedAddressIsTheFirstLineOfTailscaleIp() {
+        assertEquals(Optional.of("100.75.38.1"), Tailnet.parseReported("100.75.38.1\n"));
+        assertEquals(Optional.empty(), Tailnet.parseReported(""));
+        assertEquals(Optional.empty(), Tailnet.parseReported("Tailscale is stopped.\n"));
+    }
 }

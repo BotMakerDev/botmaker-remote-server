@@ -85,6 +85,9 @@ public final class RemoteServer {
         if (host == null) {
             System.err.println("No tailscale0 address found and no --bind given. This server hands out a "
                     + "shell; it binds the tailnet or nothing.");
+            Tailnet.reported().ifPresent(ip -> System.err.println("tailscale reports " + ip + " but tailscale0 "
+                    + "carries no address: tailscaled lost its interface configuration (often after starting "
+                    + "offline). Run: sudo systemctl restart tailscaled"));
             System.exit(1);
             return;
         }

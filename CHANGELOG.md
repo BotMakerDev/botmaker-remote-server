@@ -5,6 +5,15 @@ All notable changes to `botmaker-remote-server`.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this module uses
 [semantic versioning](https://semver.org/). `release.sh` refuses to cut a version with no section here.
 
+## [Unreleased]
+
+### Changed
+
+- The refusal to start without a `tailscale0` address now says when tailscaled still reports one
+  (`tailscale ip -4`): the daemon lost its interface configuration, usually after starting while the
+  network was down, and `sudo systemctl restart tailscaled` restores it. The server still binds the
+  tailnet or nothing.
+
 ## [0.0.6] — 2026-09-19
 
 ### Changed
