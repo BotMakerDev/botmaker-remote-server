@@ -15,13 +15,13 @@ class ParsingTest {
     @Test
     void tmuxWindowsReadInIndexOrderAndTolerateStrayLines() {
         List<Tmux.Window> windows = Tmux.parse("""
-                0\tbgroisne\tnode\t1
+                0\taccount 1\tnode\t1
                 1\taccount 2\tbash\t0
                 not a window
                 3\trenamed\tclaude\t0
                 """);
         assertEquals(3, windows.size());
-        assertEquals(new Tmux.Window(0, "bgroisne", "node", true), windows.get(0));
+        assertEquals(new Tmux.Window(0, "account 1", "node", true), windows.get(0));
         assertTrue(windows.get(0).claudeRunning());
         assertFalse(windows.get(1).claudeRunning());
         assertTrue(windows.get(2).claudeRunning());

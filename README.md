@@ -134,7 +134,7 @@ one — every paired phone then has to scan again, which is how a leaked URL is 
 ## Sessions
 
 ```bash
-tmux new -d -s claude -n bgroisne 'cswap run 1 -- claude'    # one window per account, or
+tmux new -d -s claude -n main 'cswap run 1 -- claude'       # one window per account, or
 tmux new-window -t claude -n other 'cswap run 2 -- claude'    # … the app's ＋ button does the same
 ```
 
