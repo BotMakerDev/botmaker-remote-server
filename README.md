@@ -1,7 +1,7 @@
 # botmaker-remote-server
 
 Phone access to the Claude Code terminals on a dev box, over Tailscale. The server half of
-[botmaker-remote](https://github.com/LiQiyeDev/botmaker-remote), the phone app.
+[botmaker-remote](https://github.com/BotMakerDev/botmaker-remote), the phone app.
 
 **The problem it answers.** Claude Code's Remote Control binds one Claude account; switching accounts with
 [`cswap`](https://github.com/LiQiyeDev/cswap) ends the session. So the phone attaches to *terminals*
@@ -38,30 +38,31 @@ it should be typed. Never expose it through Tailscale Funnel.
 
 ```bash
 sudo curl -fsSL -o /etc/yum.repos.d/botmaker-remote-server.repo \
-  https://liqiyedev.github.io/botmaker-remote-server/botmaker-remote-server.repo
+  https://botmakerdev.github.io/botmaker-remote-server/botmaker-remote-server.repo
 sudo dnf install botmaker-remote-server
 systemctl --user enable --now botmaker-remote
 journalctl --user -u botmaker-remote -f          # the pairing URL is in the log
 ```
 
 **Debian, Ubuntu** — the apt line depends on whether the release was signed, so take it from
-[the repository page](https://liqiyedev.github.io/botmaker-remote-server/), which prints the snippet that
+[the repository page](https://botmakerdev.github.io/botmaker-remote-server/), which prints the snippet that
 matches what is actually published.
 
 **Signing.** The repository is **unsigned today**: nothing verifies that a package came from this project,
 and `dnf` is told so — the generated `.repo` sets `gpgcheck=0` and `repo_gpgcheck=0`, and the apt line says
 `[trusted=yes]`. HTTPS proves who *served* the file, not who *built* it. If that is not a trade you want,
-install the release asset by hand, or `tools/install.sh` from a checkout. Signing is three secrets away
-(`GPG_KEY_ID`, `GPG_PASSPHRASE`, `GPG_PRIVATE_KEY` on this repository, the key `botmaker-cli`'s repository
-already uses): with them present the release job signs the rpm and both indexes, the page starts printing
-the verified snippets, and nothing else changes. The steps are in
+install the release asset by hand, or `tools/install.sh` from a checkout. **The next release signs itself**:
+`GPG_KEY_ID`, `GPG_PASSPHRASE` and `GPG_PRIVATE_KEY` are set on the `BotMakerDev` organization, which this
+repository joined on 2026-09-18, and they hold the key `botmaker-cli` already publishes. With them present
+the release job signs the rpm and both indexes, the page starts printing the verified snippets, and nothing
+else changes. The steps are in
 [`docs/signing.md`](docs/signing.md), including what an already-installed machine has to import when
 `gpgcheck` goes on.
 
 Later: `sudo dnf upgrade botmaker-remote-server` (or apt's equivalent), then `systemctl --user restart
 botmaker-remote`. The repository carries the **latest release only** — it is an upgrade channel, not an
 archive; every version stays on the Releases page, and
-[`botmaker-remote-server.rpm`](https://github.com/LiQiyeDev/botmaker-remote-server/releases/latest/download/botmaker-remote-server.rpm)
+[`botmaker-remote-server.rpm`](https://github.com/BotMakerDev/botmaker-remote-server/releases/latest/download/botmaker-remote-server.rpm)
 installs directly with `sudo dnf install ./botmaker-remote-server.rpm`.
 
 The package installs `/usr/bin/botmaker-remote-server`, `/usr/bin/botmaker-remote-hook`, the jar under
@@ -73,7 +74,7 @@ assumed, and `cswap` + `claude` are per-user installs the "new session" screen n
 **Any Linux, no root** — the same four files under `~/.local`:
 
 ```bash
-git clone https://github.com/LiQiyeDev/botmaker-remote-server && cd botmaker-remote-server
+git clone https://github.com/BotMakerDev/botmaker-remote-server && cd botmaker-remote-server
 tools/install.sh                 # newest release; or tools/install.sh target/…-all.jar for a local build
 systemctl --user enable --now botmaker-remote   # install.sh does this for you
 ```

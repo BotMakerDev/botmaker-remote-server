@@ -2,16 +2,23 @@
 
 How `botmaker-remote-server`'s dnf/apt repository gets signed, and why the steps are all yours to run.
 
-## Where this stands today (2026-09-17)
+## Where this stands today (2026-09-19)
+
+**The three secrets exist on the `BotMakerDev` organization, visible to every repository in it**, and this
+repository moved into that organization on 2026-09-18. So the next release signs itself with no step here.
+What follows is still the procedure — for a rotation, for a repository outside the organization, and as the
+explanation of what the organization secrets hold. A repository secret of the same name wins over the
+organization's, which is the escape hatch if one repository ever needs a different key.
+
 
 | Repository | Packages | Index | Key |
 |---|---|---|---|
 | `botmaker-cli` | signed rpm | `repomd.xml.asc`, `InRelease` | `5300F1BC092474AC` — `LiQiyeDev <liqiyedev@users.noreply.github.com>`, published as `botmaker.asc` on its Pages site since 2026-09-04 |
-| `botmaker-remote-server` | unsigned | unsigned, and the page says so | none set |
+| `botmaker-remote-server` | signed from the next release | the same, from the next release | the same key, inherited from the organization |
 
 **So there is no key to make.** The workflow here is `botmaker-cli`'s with the names changed, it reads the
-same three secret names, and the decision taken with the maintainer is *one key for both*. What is missing
-is those three secrets on **this** repository:
+same three secret names, and the decision taken with the maintainer is *one key for every repository*.
+Those three names are what the organization holds:
 
 | Secret | What it holds | Read by |
 |---|---|---|
@@ -27,9 +34,9 @@ not from `botmaker-cli`'s settings page.
 The umbrella's **`tools/signing-secret.sh`** is the whole procedure:
 
 ```bash
-tools/signing-secret.sh --repo LiQiyeDev/botmaker-remote-server   # one repository
-tools/signing-secret.sh --org <org>                               # every repository in an organization
-tools/signing-secret.sh --org <org> --dry-run                     # rehearse it, no gh call
+tools/signing-secret.sh --org BotMakerDev                            # every repository in the organization
+tools/signing-secret.sh --repo BotMakerDev/botmaker-remote-server    # one repository, overriding the org
+tools/signing-secret.sh --org BotMakerDev --dry-run                  # rehearse it, no gh call
 ```
 
 It finds the secret keys in your keyring, makes you choose when there is more than one, prints the
@@ -49,9 +56,9 @@ set, which is all GitHub will ever give back.
 
    ```bash
    base64 -w0 botmaker-signing.asc > botmaker-signing.b64
-   gh secret set GPG_PRIVATE_KEY --repo LiQiyeDev/botmaker-remote-server < botmaker-signing.b64
-   printf '5300F1BC092474AC' | gh secret set GPG_KEY_ID --repo LiQiyeDev/botmaker-remote-server
-   gh secret set GPG_PASSPHRASE --repo LiQiyeDev/botmaker-remote-server   # prompts, echoes nothing
+   gh secret set GPG_PRIVATE_KEY --repo BotMakerDev/botmaker-remote-server < botmaker-signing.b64
+   printf '5300F1BC092474AC' | gh secret set GPG_KEY_ID --repo BotMakerDev/botmaker-remote-server
+   gh secret set GPG_PASSPHRASE --repo BotMakerDev/botmaker-remote-server   # prompts, echoes nothing
    ```
 
    Each value is piped from a file or typed into a prompt, so none of them reaches your shell history, the
@@ -59,7 +66,7 @@ set, which is all GitHub will ever give back.
 4. `shred -u botmaker-signing.asc botmaker-signing.b64`. The key stays in the keyring; the passphrase stays
    in your password manager. **Back the key up once**, to an encrypted volume — a lost signing key means
    every client that already trusts it has to be told about a new one by hand.
-5. `gh secret list --repo LiQiyeDev/botmaker-remote-server` shows the three names (never the values).
+5. `gh secret list --repo BotMakerDev/botmaker-remote-server` shows the three names (never the values).
 
 ### If you are ever setting up from nothing
 
@@ -83,8 +90,8 @@ So the secrets take effect on the **next release of this module**, or on a re-ru
 workflow:
 
 ```bash
-gh run list --repo LiQiyeDev/botmaker-remote-server --branch v0.0.3 --limit 3
-gh run rerun <id> --repo LiQiyeDev/botmaker-remote-server
+gh run list --repo BotMakerDev/botmaker-remote-server --branch v0.0.3 --limit 3
+gh run rerun <id> --repo BotMakerDev/botmaker-remote-server
 ```
 
 A re-run rebuilds the packages and republishes the Pages site from them, which is the whole repository.
@@ -92,10 +99,10 @@ A re-run rebuilds the packages and republishes the Pages site from them, which i
 ## Checking it worked
 
 ```bash
-curl -fsS https://liqiyedev.github.io/botmaker-remote-server/botmaker.asc | gpg --show-keys
-curl -fsS -o /dev/null -w '%{http_code}\n' https://liqiyedev.github.io/botmaker-remote-server/rpm/repodata/repomd.xml.asc
-curl -fsS -o /dev/null -w '%{http_code}\n' https://liqiyedev.github.io/botmaker-remote-server/deb/dists/stable/InRelease
-curl -fsS https://liqiyedev.github.io/botmaker-remote-server/ | grep -c unsigned      # 0
+curl -fsS https://botmakerdev.github.io/botmaker-remote-server/botmaker.asc | gpg --show-keys
+curl -fsS -o /dev/null -w '%{http_code}\n' https://botmakerdev.github.io/botmaker-remote-server/rpm/repodata/repomd.xml.asc
+curl -fsS -o /dev/null -w '%{http_code}\n' https://botmakerdev.github.io/botmaker-remote-server/deb/dists/stable/InRelease
+curl -fsS https://botmakerdev.github.io/botmaker-remote-server/ | grep -c unsigned      # 0
 ```
 
 The key must be `5300F1BC092474AC`, the same one `botmaker-cli`'s site publishes.
@@ -106,13 +113,13 @@ The generated `.repo` turns `gpgcheck` **on**, so a machine that installed while
 update until it trusts the key:
 
 ```bash
-sudo rpm --import https://liqiyedev.github.io/botmaker-remote-server/botmaker.asc
+sudo rpm --import https://botmakerdev.github.io/botmaker-remote-server/botmaker.asc
 sudo curl -fsSL -o /etc/yum.repos.d/botmaker-remote-server.repo \
-  https://liqiyedev.github.io/botmaker-remote-server/botmaker-remote-server.repo
+  https://botmakerdev.github.io/botmaker-remote-server/botmaker-remote-server.repo
 sudo dnf upgrade botmaker-remote-server
 ```
 
-apt: take the line the [repository page](https://liqiyedev.github.io/botmaker-remote-server/) prints — it
+apt: take the line the [repository page](https://botmakerdev.github.io/botmaker-remote-server/) prints — it
 carries `[signed-by=/etc/apt/keyrings/botmaker.asc]` and the `curl` that installs that keyring.
 
 Somebody who already trusts the key for `botmaker-cli` still imports it here for apt (the keyring path is

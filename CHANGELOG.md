@@ -12,6 +12,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 - **`docs/signing.md` leads with `tools/signing-secret.sh`**, including the organization-wide form that
   sets the three secrets once for every repository, and keeps the by-hand Seahorse export underneath as
   the explanation of what the script does.
+- **Every address is `BotMakerDev`'s**: the dnf/apt repository is served from
+  `botmakerdev.github.io/botmaker-remote-server`, and the README's clone, release-asset and phone-app links
+  name the organization the repository moved into on 2026-09-18. The signing secrets are the
+  organization's now, so this repository signs its next release without a step of its own.
 
 ## [0.0.4] — 2026-09-18
 
