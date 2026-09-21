@@ -5,6 +5,13 @@ All notable changes to `botmaker-remote-server`.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this module uses
 [semantic versioning](https://semver.org/). `release.sh` refuses to cut a version with no section here.
 
+## [Unreleased]
+
+### Changed
+
+- The README's and the parsing fixture's tmux window naming example now reads `main` and `account 1`
+  instead of naming a specific account.
+
 ## [0.0.7] — 2026-09-19
 
 ### Changed
