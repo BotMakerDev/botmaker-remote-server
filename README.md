@@ -13,8 +13,10 @@ whichever it likes. Nothing switches, so nothing disconnects.
 | Route | What |
 |---|---|
 | `GET /api/sessions` | the tmux windows in session `claude`, each with `running` / `waiting` / `idle` |
-| `POST /api/sessions {slot}` | open a window running Claude under that `cswap` account |
+| `POST /api/sessions {slot, cwd}` | open a window running Claude under that `cswap` account, started in `cwd` (a directory under home; home when blank) |
 | `DELETE /api/sessions/{i}` | close one |
+| `GET /api/dirs?path=` | a directory's visible sub-directories, under home only (symlinks resolved) |
+| `GET /api/dirs/recent` | the directories sessions started in, newest first (kept beside the token as `recent-dirs`) |
 | `POST /api/sessions/{i}/send {text}` or `{key}` | type into one without opening it (quick replies) |
 | `GET /api/accounts` | the `cswap` slots and their usage |
 | `WS /ws/term/{i}?cols=&rows=` | the terminal itself: a PTY on `tmux attach`, bytes both ways |

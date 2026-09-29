@@ -1,5 +1,6 @@
 package com.botmaker.remote;
 
+import java.nio.file.Path;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
@@ -80,16 +81,8 @@ public final class Tmux {
      * tmux's own current window where it was: somebody typing at the desktop must not have their window
      * swapped under them because a phone opened another.
      */
-    public static Optional<Window> create(String slot, String name) {
-        String windowName = name == null || name.isBlank() ? "account " + slot : name;
-        Proc made;
-        if (sessionExists()) {
-            made = Proc.run(TIMEOUT, "tmux", "new-window", "-d", "-P", "-F", "#{window_index}", "-t", SESSION,
-                    "-n", windowName, "--", "cswap", "run", slot, "--", "claude");
-        } else {
-            made = Proc.run(TIMEOUT, "tmux", "new-session", "-d", "-P", "-F", "#{window_index}", "-s", SESSION,
-                    "-n", windowName, "--", "cswap", "run", slot, "--", "claude");
-        }
+    public static Optional<Window> create(String slot, String name, Path cwd) {
+        Proc made = Proc.run(TIMEOUT, createCommand(sessionExists(), slot, name, cwd).toArray(String[]::new));
         if (!made.ok()) return Optional.empty();
         String printed = made.out().trim();
         try {
@@ -98,6 +91,19 @@ public final class Tmux {
         } catch (NumberFormatException e) {
             return Optional.empty();
         }
+    }
+
+    /**
+     * The tmux command {@link #create} runs: a new window in the session, or the session itself when there is
+     * none. {@code -c} is where Claude starts — the directory the phone picked, already checked by {@link Dirs}.
+     */
+    static List<String> createCommand(boolean sessionExists, String slot, String name, Path cwd) {
+        String windowName = name == null || name.isBlank() ? "account " + slot : name;
+        List<String> command = new ArrayList<>(sessionExists
+                ? List.of("tmux", "new-window", "-d", "-P", "-F", "#{window_index}", "-t", SESSION)
+                : List.of("tmux", "new-session", "-d", "-P", "-F", "#{window_index}", "-s", SESSION));
+        command.addAll(List.of("-c", cwd.toString(), "-n", windowName, "--", "cswap", "run", slot, "--", "claude"));
+        return command;
     }
 
     /** Closes a window; whatever ran in it is gone. False when tmux refused (no such window). */
@@ -154,9 +160,17 @@ public final class Tmux {
      * <p>{@code destroy-unattached} is set <em>after</em> attaching, in the same command chain: set on the
      * detached session {@link #openView} just made, tmux destroys it on the spot, before anything attaches
      * (found the hard way — the first attach ended with "detached" a millisecond in).
+     *
+     * <p>{@code mouse on} is set on the view the same way, and so only on the phone's view: {@code mouse} is a
+     * session option, and a grouped session keeps its own. It makes tmux ask the phone's terminal for mouse
+     * reports, so a wheel report (the app turns a finger drag into one) scrolls the pane's history in
+     * copy-mode. Without it Claude Code's output could not be scrolled at all: tmux draws on the alternate
+     * screen, which has no scrollback of its own. A desktop client on {@code claude} keeps its own setting.
      */
     public static String[] attachCommand(String view) {
-        return new String[] {"tmux", "attach-session", "-t", view, ";", "set-option", "destroy-unattached", "on"};
+        return new String[] {"tmux", "attach-session", "-t", view,
+                ";", "set-option", "destroy-unattached", "on",
+                ";", "set-option", "mouse", "on"};
     }
 
     static String target(int index) {

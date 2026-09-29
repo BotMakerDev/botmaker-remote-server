@@ -51,6 +51,13 @@ one service. It is a **user** unit and the package enables nothing: this program
 - **A phone attaches to a view, not to the session** (`Tmux.openView`): a grouped session with its own
   current window, `destroy-unattached` set *after* attaching (set before, tmux destroys it on the spot).
 - **The wire interprets nothing** (`Terminal`): bytes both ways; xterm.js on the phone is the terminal.
+- **The phone's view has `mouse on`, and only it** (2026-09-29, `Tmux.attachCommand`): set on the view after
+  attaching, like `destroy-unattached`; `mouse` is a session option, so a desktop client on `claude` keeps
+  its own. It is what lets the app's finger drag (sent as SGR wheel reports) scroll tmux's history —
+  tmux draws on the alternate screen, which has no scrollback. Verified by hand on a private `-L` socket.
+- **A session starts in a directory under home, nothing else** (`Dirs`): the requested path is resolved with
+  `toRealPath`, so `..` and a symlink out of home are both refused; the recent list is `recent-dirs` beside
+  the token, a convenience that loses nothing when lost.
 - **Every route wants the token** (`Routes.tokenOf`), including the hook — the hook script reads it off
   the same file. The one request let through is a CORS preflight (`Routes.needsToken`), which cannot carry
   it and reaches no route; CORS is granted to the app's WebView origin `https://localhost` only

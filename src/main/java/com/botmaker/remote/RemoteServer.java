@@ -130,7 +130,9 @@ public final class RemoteServer {
         Token token = Token.load(options.tokenFile());
         Activity activity = new Activity();
         Ntfy ntfy = new Ntfy(options.ntfy());
-        Routes routes = new Routes(token, activity, ntfy, version());
+        Dirs dirs = new Dirs(Path.of(System.getProperty("user.home")),
+                options.tokenFile().resolveSibling("recent-dirs"));
+        Routes routes = new Routes(token, activity, ntfy, dirs, version());
 
         Javalin app = Javalin.create(config -> {
             config.showJavalinBanner = false;

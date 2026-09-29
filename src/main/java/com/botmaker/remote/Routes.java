@@ -25,8 +25,10 @@ import java.util.concurrent.ConcurrentHashMap;
  *   GET    /api/status                    who am I, tmux present, cswap present, ntfy configured
  *   GET    /api/accounts                  the cswap slots
  *   GET    /api/sessions                  the tmux windows with their activity state
- *   POST   /api/sessions      {slot,name} open a window running Claude under that account
+ *   POST   /api/sessions {slot,name,cwd}  open a window running Claude under that account, in cwd (home when blank)
  *   DELETE /api/sessions/{i}              kill a window
+ *   GET    /api/dirs?path=                a directory's sub-directories, under home only
+ *   GET    /api/dirs/recent               the directories sessions started in, newest first
  *   POST   /api/sessions/{i}/send {text,enter} | {key}   type into it without attaching
  *   POST   /api/hook          {event,window,message}    Claude Code's hooks report here
  *   WS     /ws/events                     every activity change, as JSON
@@ -52,13 +54,15 @@ public final class Routes {
     private final Token token;
     private final Activity activity;
     private final Ntfy ntfy;
+    private final Dirs dirs;
     private final String version;
     private final Map<WsContext, Terminal> terminals = new ConcurrentHashMap<>();
     private final Map<WsContext, Integer> attachedWindow = new ConcurrentHashMap<>();
     private final List<WsContext> eventSockets = new ArrayList<>();
 
-    public Routes(Token token, Activity activity, Ntfy ntfy, String version) {
+    public Routes(Token token, Activity activity, Ntfy ntfy, Dirs dirs, String version) {
         this.token = token;
+        this.dirs = dirs;
         this.activity = activity;
         this.ntfy = ntfy;
         this.version = version;
@@ -93,13 +97,35 @@ public final class Routes {
                 ctx.status(HttpStatus.BAD_REQUEST).json(Map.of("error", "slot is required"));
                 return;
             }
-            Optional<Tmux.Window> made = Tmux.create(slot, body.path("name").asText(""));
+            Optional<java.nio.file.Path> cwd = dirs.resolve(body.path("cwd").asText(""));
+            if (cwd.isEmpty()) {
+                ctx.status(HttpStatus.BAD_REQUEST).json(Map.of("error", "cwd is not a directory under " + dirs.home()));
+                return;
+            }
+            Optional<Tmux.Window> made = Tmux.create(slot, body.path("name").asText(""), cwd.get());
             if (made.isEmpty()) {
                 ctx.status(HttpStatus.BAD_GATEWAY).json(Map.of("error", "tmux could not open a window"));
                 return;
             }
+            dirs.used(cwd.get());
             ctx.status(HttpStatus.CREATED).json(session(made.get()));
         });
+
+        app.get("/api/dirs", ctx -> {
+            Optional<Dirs.Listing> listing = dirs.list(ctx.queryParam("path"));
+            if (listing.isEmpty()) {
+                ctx.status(HttpStatus.NOT_FOUND).json(Map.of("error", "not a directory under " + dirs.home()));
+                return;
+            }
+            Map<String, Object> out = new LinkedHashMap<>();
+            out.put("path", listing.get().path());
+            out.put("parent", listing.get().parent().orElse(null));
+            out.put("home", dirs.home().toString());
+            out.put("dirs", listing.get().dirs());
+            ctx.json(out);
+        });
+
+        app.get("/api/dirs/recent", ctx -> ctx.json(dirs.recent()));
 
         app.delete("/api/sessions/{i}", ctx -> {
             int index = Integer.parseInt(ctx.pathParam("i"));
