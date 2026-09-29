@@ -5,6 +5,15 @@ All notable changes to `botmaker-remote-server`.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this module uses
 [semantic versioning](https://semver.org/). `release.sh` refuses to cut a version with no section here.
 
+## [Unreleased]
+
+### Fixed
+
+- The phone app could not reach the server: every request failed with "Failed to fetch". The app's WebView
+  sends a CORS preflight first, and the server refused it with 401 and no CORS headers. The server now
+  grants CORS to the app's origin (`https://localhost`) only, and lets the preflight through without the
+  token. Every other request still needs the token.
+
 ## [0.1.0] — 2026-09-29
 
 ### Added

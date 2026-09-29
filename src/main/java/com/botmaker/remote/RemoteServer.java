@@ -134,6 +134,7 @@ public final class RemoteServer {
 
         Javalin app = Javalin.create(config -> {
             config.showJavalinBanner = false;
+            config.bundledPlugins.enableCors(cors -> cors.addRule(rule -> rule.allowHost(Routes.APP_ORIGIN)));
             config.jetty.modifyWebSocketServletFactory(factory ->
                     factory.setIdleTimeout(java.time.Duration.ofHours(12)));
         });

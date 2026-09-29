@@ -52,7 +52,9 @@ one service. It is a **user** unit and the package enables nothing: this program
   current window, `destroy-unattached` set *after* attaching (set before, tmux destroys it on the spot).
 - **The wire interprets nothing** (`Terminal`): bytes both ways; xterm.js on the phone is the terminal.
 - **Every route wants the token** (`Routes.tokenOf`), including the hook — the hook script reads it off
-  the same file.
+  the same file. The one request let through is a CORS preflight (`Routes.needsToken`), which cannot carry
+  it and reaches no route; CORS is granted to the app's WebView origin `https://localhost` only
+  (`Routes.APP_ORIGIN`), never to any host (2026-09-29: without it every fetch read as "Failed to fetch").
 - Tests spawn no process. `ParsingTest` holds the text formats read (tmux, cswap, ip addr and route, `ss`,
   `tailscale status --json`) and the option parsing;
   `GuardsTest` the token and the activity state. Anything that needs tmux is checked by hand with the

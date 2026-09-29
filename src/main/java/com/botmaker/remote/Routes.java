@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.javalin.Javalin;
 import io.javalin.http.Context;
+import io.javalin.http.HandlerType;
 import io.javalin.http.HttpStatus;
 import io.javalin.http.UnauthorizedResponse;
 import io.javalin.websocket.WsContext;
@@ -35,9 +36,16 @@ import java.util.concurrent.ConcurrentHashMap;
  * <p>Every route wants the token — {@code X-Botmaker-Token} header, {@code Authorization: Bearer}, or
  * {@code ?token=} for the WebSocket handshakes a browser cannot add a header to — and answers 401 without
  * it. The hook route is the one exception in <em>where the token comes from</em>, not in whether: the hook
- * script reads it off the same file this server does.
+ * script reads it off the same file this server does. A CORS preflight ({@code OPTIONS}) is let through
+ * without it, because it cannot carry one; it reaches no route.
  */
 public final class Routes {
+
+    /**
+     * The phone app's WebView origin (Capacitor's {@code androidScheme: "https"}), the only one granted CORS.
+     * The app's fetches are cross-origin to this server, and a missing grant reads as "Failed to fetch".
+     */
+    static final String APP_ORIGIN = "https://localhost";
 
     private static final ObjectMapper JSON = new ObjectMapper();
 
@@ -59,6 +67,7 @@ public final class Routes {
 
     public void install(Javalin app) {
         app.before("/api/*", ctx -> {
+            if (!needsToken(ctx.method())) return;
             if (!token.matches(tokenOf(ctx))) throw new UnauthorizedResponse("bad or missing token");
         });
         app.wsBefore(ws -> ws.onConnect(ctx -> {
@@ -248,6 +257,14 @@ public final class Routes {
         } catch (IOException e) {
             return "{\"type\":\"" + type + "\"}";
         }
+    }
+
+    /**
+     * A CORS preflight is the one request that cannot carry the token: the WebView sends it before the real
+     * request, stripped of every custom header. It runs no route; the CORS plugin answers it.
+     */
+    static boolean needsToken(HandlerType method) {
+        return method != HandlerType.OPTIONS;
     }
 
     static String tokenOf(Context ctx) {

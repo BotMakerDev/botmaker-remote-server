@@ -1,5 +1,6 @@
 package com.botmaker.remote;
 
+import io.javalin.http.HandlerType;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -40,6 +41,13 @@ class GuardsTest {
         assertFalse(token.matches("abc1234"));
         assertFalse(token.matches(""));
         assertFalse(token.matches(null));
+    }
+
+    @Test
+    void onlyThePreflightGoesWithoutTheToken() {
+        for (HandlerType method : HandlerType.values()) {
+            assertEquals(method != HandlerType.OPTIONS, Routes.needsToken(method), method.name());
+        }
     }
 
     @Test
