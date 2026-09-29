@@ -30,7 +30,21 @@ URL the server prints, as a QR code, when it starts.
 This is a shell on your machine. The server therefore **binds the `tailscale0` address and refuses to
 start without one**: on the tailnet, the token is a second lock behind WireGuard and your tailnet's ACLs.
 `--bind <ip>` overrides that, and it takes a full address on purpose — typing `0.0.0.0` is a decision, and
-it should be typed. Never expose it through Tailscale Funnel.
+it should be typed. `--lan` binds the local network address instead (the source of the default route, never a
+Docker or Waydroid bridge) and prints a warning at every start: anyone on that Wi-Fi can try the token. Never
+expose it through Tailscale Funnel or any public tunnel — the Remote Pilot offers those, a shell does not.
+
+## When the phone cannot connect
+
+```bash
+botmaker-remote-server --doctor
+```
+
+It binds nothing and checks the chain from this side: tailscaled, the `tailscale0` address, every tailnet
+peer with whether it is online and when it was last seen (phones first), the port, tmux and the token file,
+then lists what to do. Most often the answer is the phone: Tailscale disconnected there, or Android stopped
+it in the background. On the phone, turn on *Settings ▸ Network ▸ VPN ▸ Tailscale ▸ Always-on VPN* and set
+Tailscale's battery use to *Unrestricted*. The app shows the same steps when it cannot reach the server.
 
 ## Install
 
@@ -83,7 +97,7 @@ Both may be installed at once — the launcher prefers `~/.local/lib/botmaker/bo
 so a local build shadows the packaged one without uninstalling anything, and `BOTMAKER_REMOTE_JAR=<path>`
 beats both.
 
-By hand instead: `java -jar botmaker-remote-server-all.jar [--port 7788] [--bind IP] [--token-file PATH]
+By hand instead: `java -jar botmaker-remote-server-all.jar [--port 7788] [--bind IP | --lan] [--token-file PATH]
 [--ntfy URL] [--big-qr] [--quiet]` prints the QR and serves until killed. The QR uses half-block glyphs,
 which an IDE run window (IntelliJ's console pads its lines) tears into stripes — `--big-qr` draws one
 full block per module instead, square anywhere.

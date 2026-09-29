@@ -7,7 +7,14 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
-No source changes since v0.0.8; re-released for updated upstream pins.
+### Added
+
+- **`--doctor`** says why a phone cannot reach the server, from this machine: tailscaled's state, the
+  `tailscale0` address, every tailnet peer with whether it is online and when it was last seen (phones first),
+  the port, tmux and the token file, then what to do. It binds nothing.
+- **`--lan`** binds the local network address (the default route's source; Docker, Waydroid and other
+  bridges are skipped) and warns at every start that the token is then the only lock. It cannot be combined
+  with `--bind`. There is still no public-tunnel option.
 
 ### Changed
 

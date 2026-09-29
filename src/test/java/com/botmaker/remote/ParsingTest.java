@@ -90,6 +90,60 @@ class ParsingTest {
     }
 
     @Test
+    void lanIsTheDefaultRoutesSourceUnlessItLeavesThroughATunnel() {
+        assertEquals(Optional.of("192.168.0.107"),
+                Lan.parseRoute("1.1.1.1 via 192.168.0.1 dev wlo1 src 192.168.0.107 uid 1000\n    cache\n"));
+        // An exit node or a VPN carries the default route: its address is not the Wi-Fi's.
+        assertEquals(Optional.empty(),
+                Lan.parseRoute("1.1.1.1 dev tailscale0 table 52 src 100.68.8.73 uid 1000\n"));
+        assertEquals(Optional.empty(), Lan.parseRoute("RTNETLINK answers: Network is unreachable\n"));
+    }
+
+    @Test
+    void withoutARouteLanIsTheFirstPrivateAddressOnAPhysicalInterface() {
+        // `ip -4 -o addr show` on the dev box, 2026-09-29: Waydroid's and Docker's bridges carry private
+        // addresses too, and neither is the network the phone is on.
+        String addrs = """
+                1: lo    inet 127.0.0.1/8 scope host lo\\       valid_lft forever preferred_lft forever
+                3: waydroid0    inet 192.168.240.1/24 brd 192.168.240.255 scope global waydroid0\\       valid_lft forever
+                4: docker0    inet 172.17.0.1/16 brd 172.17.255.255 scope global docker0\\       valid_lft forever
+                5: tailscale0    inet 100.68.8.73/32 scope global tailscale0\\       valid_lft forever
+                6: wlo1    inet 192.168.0.107/24 brd 192.168.0.255 scope global dynamic wlo1\\       valid_lft 80000sec
+                """;
+        assertEquals(Optional.of("192.168.0.107"), Lan.parseAddresses(addrs));
+        assertEquals(Optional.empty(), Lan.parseAddresses(""));
+        assertTrue(Lan.isPrivate("172.31.1.1"));
+        assertFalse(Lan.isPrivate("172.32.1.1"));
+        assertFalse(Lan.isPrivate("100.68.8.73"));
+    }
+
+    @Test
+    void lanAndBindCannotBothNameTheAddress() {
+        assertTrue(RemoteServer.Options.parse(new String[]{"--lan"}).lan());
+        assertTrue(RemoteServer.Options.parse(new String[]{"--doctor"}).doctor());
+        org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException.class,
+                () -> RemoteServer.Options.parse(new String[]{"--lan", "--bind", "10.0.0.2"}));
+    }
+
+    @Test
+    void doctorListsPhonesFirstWithWhenTheyWereLastSeen() throws Exception {
+        // Trimmed from `tailscale status --json` on the dev box, 2026-09-29: the phone nine days offline.
+        var status = new com.fasterxml.jackson.databind.ObjectMapper().readTree("""
+                {"BackendState":"Running","Peer":{
+                  "k1":{"HostName":"laptop","OS":"linux","Online":true,"LastSeen":"0001-01-01T00:00:00Z"},
+                  "k2":{"HostName":"Pixel 10","OS":"android","Online":false,"LastSeen":"2026-09-19T16:11:03.1Z"}}}
+                """);
+        List<Doctor.Peer> peers = Doctor.peers(status);
+        assertEquals("Pixel 10", peers.get(0).name());
+        assertTrue(peers.get(0).phone());
+        assertFalse(peers.get(0).online());
+        java.time.Instant now = java.time.Instant.parse("2026-09-29T12:00:00Z");
+        assertEquals("9 days ago", Doctor.ago(peers.get(0).lastSeen(), now));
+        assertEquals("never", Doctor.ago(peers.get(1).lastSeen(), now));
+        assertEquals("3 hours ago", Doctor.ago(Optional.of(now.minusSeconds(3 * 3600 + 5)), now));
+    }
+
+    @Test
     void reportedAddressIsTheFirstLineOfTailscaleIp() {
         assertEquals(Optional.of("100.75.38.1"), Tailnet.parseReported("100.75.38.1\n"));
         assertEquals(Optional.empty(), Tailnet.parseReported(""));

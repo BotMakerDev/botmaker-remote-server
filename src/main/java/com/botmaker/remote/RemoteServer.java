@@ -8,8 +8,12 @@ import java.nio.file.Path;
 import java.util.Optional;
 
 /**
- * {@code java -jar botmaker-remote-server-all.jar [--pair] [--port 7788] [--bind <ip>] [--token-file <path>]
- * [--ntfy <topic url>] [--big-qr] [--quiet]}
+ * {@code java -jar botmaker-remote-server-all.jar [--pair] [--doctor] [--port 7788] [--bind <ip> | --lan]
+ * [--token-file <path>] [--ntfy <topic url>] [--big-qr] [--quiet]}
+ *
+ * <p>{@code --lan} binds the local network address ({@link Lan}), with a warning on every start; {@code --doctor}
+ * prints why a phone cannot reach the server ({@link Doctor}) and binds nothing. There is no public-tunnel
+ * option, by rule: this serves a shell.
  *
  * <p>Starts, prints the pairing URL and its QR code, serves until killed. Meant to run as a systemd user
  * unit ({@code tools/botmaker-remote.service}); started by hand it prints the same and the QR is what the
@@ -43,7 +47,7 @@ public final class RemoteServer {
      * @param pair print the pairing block for what is already running and bind nothing
      */
     record Options(int port, Optional<String> bind, Path tokenFile, Optional<URI> ntfy, boolean bigQr,
-                   boolean quiet, boolean pair) {
+                   boolean quiet, boolean pair, boolean lan, boolean doctor) {
 
         static Options parse(String[] args) {
             int port = DEFAULT_PORT;
@@ -53,6 +57,8 @@ public final class RemoteServer {
             boolean bigQr = false;
             boolean quiet = false;
             boolean pair = false;
+            boolean lan = false;
+            boolean doctor = false;
             for (int i = 0; i < args.length; i++) {
                 switch (args[i]) {
                     case "--port" -> port = Integer.parseInt(args[++i]);
@@ -62,10 +68,13 @@ public final class RemoteServer {
                     case "--big-qr" -> bigQr = true;
                     case "--quiet" -> quiet = true;
                     case "--pair" -> pair = true;
+                    case "--lan" -> lan = true;
+                    case "--doctor" -> doctor = true;
                     default -> throw new IllegalArgumentException("unknown option " + args[i]);
                 }
             }
-            return new Options(port, bind, tokenFile, ntfy, bigQr, quiet, pair);
+            if (lan && bind.isPresent()) throw new IllegalArgumentException("--lan and --bind both name the address");
+            return new Options(port, bind, tokenFile, ntfy, bigQr, quiet, pair, lan, doctor);
         }
     }
 
@@ -75,16 +84,30 @@ public final class RemoteServer {
             options = Options.parse(args);
         } catch (RuntimeException e) {
             System.err.println("botmaker-remote-server: " + e.getMessage());
-            System.err.println("usage: --pair  --port N  --bind IP  --token-file PATH  --ntfy URL"
+            System.err.println("usage: --pair  --doctor  --port N  --bind IP | --lan  --token-file PATH  --ntfy URL"
                     + "  --big-qr  --quiet");
             System.exit(2);
             return;
         }
+        if (options.doctor()) {
+            System.exit(Doctor.run(options));
+            return;
+        }
 
-        String host = options.bind().or(Tailnet::address).orElse(null);
+        String host = options.lan() ? Lan.address().orElse(null) : options.bind().or(Tailnet::address).orElse(null);
+        if (host == null && options.lan()) {
+            System.err.println("--lan: this machine has no local network address.");
+            System.exit(1);
+            return;
+        }
+        if (options.lan()) {
+            System.err.println("WARNING: --lan binds " + host + ". Anyone on this network can reach the server, "
+                    + "and the token is the only lock on a shell. Use it on a network you trust, and prefer "
+                    + "Tailscale (see --doctor for why the phone cannot reach it).");
+        }
         if (host == null) {
             System.err.println("No tailscale0 address found and no --bind given. This server hands out a "
-                    + "shell; it binds the tailnet or nothing.");
+                    + "shell; it binds the tailnet or nothing. Run --doctor to see why.");
             Tailnet.reported().ifPresent(ip -> System.err.println("tailscale reports " + ip + " but tailscale0 "
                     + "carries no address: tailscaled lost its interface configuration (often after starting "
                     + "offline). Run: sudo systemctl restart tailscaled"));

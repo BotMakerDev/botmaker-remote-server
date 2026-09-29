@@ -37,7 +37,10 @@ one service. It is a **user** unit and the package enables nothing: this program
 ## The rules
 
 - **Binds the tailnet or nothing** (`Tailnet`). This is a shell on the operator's machine; the token is a
-  second lock behind WireGuard, never the only one. `--bind` is the typed override. Never add Funnel.
+  second lock behind WireGuard, never the only one. `--bind` is the typed override, and `--lan` (`Lan`) the
+  named one, with a warning at every start. Never add Funnel or any public tunnel (the user's rule,
+  2026-09-29: the Pilot may have them, a shell may not). `--doctor` (`Doctor`) binds nothing and reads
+  `tailscale status --json` for each peer's online and last-seen state.
 - **The QR is a function of the address, the port and the token file — never of a socket** (`--pair`,
   2026-09-17). The packaged unit runs `--quiet` and holds the port, so a question that needed the server
   stopped to be answered was the one question it must not need. `--quiet` suppresses the QR block and keeps
@@ -50,8 +53,8 @@ one service. It is a **user** unit and the package enables nothing: this program
 - **The wire interprets nothing** (`Terminal`): bytes both ways; xterm.js on the phone is the terminal.
 - **Every route wants the token** (`Routes.tokenOf`), including the hook — the hook script reads it off
   the same file.
-- Tests spawn no process. `ParsingTest` holds the four text formats read (tmux, cswap, ip, `ss`) and the
-  option parsing;
+- Tests spawn no process. `ParsingTest` holds the text formats read (tmux, cswap, ip addr and route, `ss`,
+  `tailscale status --json`) and the option parsing;
   `GuardsTest` the token and the activity state. Anything that needs tmux is checked by hand with the
   WebSocket script in the phase recap, not by a test that fails on CI for lack of a terminal.
 
