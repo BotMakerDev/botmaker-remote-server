@@ -4,11 +4,11 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <!--
-      groupId is com.github.LiQiyeDev like every other module in the umbrella reactor, so the GAV here is
+      groupId is com.github.BotMakerDev like every other module in the umbrella reactor, so the GAV here is
       the GAV everywhere. Nothing resolves this module as a dependency: it is a PROGRAM, published as one
       executable jar on its GitHub Release, and JitPack never builds it.
     -->
-    <groupId>com.github.LiQiyeDev</groupId>
+    <groupId>com.github.BotMakerDev</groupId>
     <artifactId>botmaker-remote-server</artifactId>
     <version>0.0.0-SNAPSHOT</version>
     <name>BotMaker Remote Server</name>

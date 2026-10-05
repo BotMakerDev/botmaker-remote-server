@@ -7,6 +7,11 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+### Changed
+
+- The reactor coordinate is `com.github.BotMakerDev:botmaker-remote-server` (was `com.github.LiQiyeDev`).
+  Nothing resolves it; the release assets are unchanged.
+
 No source changes since v0.1.2; re-released for updated upstream pins.
 
 ### Added

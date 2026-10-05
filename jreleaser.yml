@@ -22,7 +22,7 @@ project:
     homepage: https://github.com/BotMakerDev/botmaker-remote-server
   languages:
     java:
-      groupId: com.github.LiQiyeDev
+      groupId: com.github.BotMakerDev
       artifactId: botmaker-remote-server
       version: '21'
 
