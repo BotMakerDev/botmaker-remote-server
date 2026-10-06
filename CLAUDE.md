@@ -71,7 +71,7 @@ one service. It is a **user** unit and the package enables nothing: this program
 
 ```bash
 mvn verify                                   # here
-java -jar target/botmaker-remote-server-0.0.0-SNAPSHOT-all.jar --port 7799 --token-file /tmp/t --quiet
+java -jar "$(ls -1t target/botmaker-remote-server-*-all.jar | head -1)" --port 7799 --token-file /tmp/t --quiet
 ```
 
 Pins: `maven-compiler-plugin` 3.11.0, `maven-shade-plugin` 3.5.1 — the same set as the rest of the

@@ -86,7 +86,7 @@ jobs:
           curl -fsSL -o /tmp/nfpm.tar.gz \
             "https://github.com/goreleaser/nfpm/releases/download/v${NFPM_VERSION}/nfpm_${NFPM_VERSION}_Linux_x86_64.tar.gz"
           tar -xzf /tmp/nfpm.tar.gz -C /tmp nfpm
-          # The tag, not the pom: this pom's <version> is the cosmetic 0.0.0-SNAPSHOT.
+          # The tag, not the pom: the tag is what the release named (the tag's pom agrees since 2026-10-06).
           export BOTMAKER_VERSION="${GITHUB_REF_NAME#v}"
           export NFPM_RPM_KEY_FILE=""
           if [ -n "$GPG_PRIVATE_KEY" ]; then

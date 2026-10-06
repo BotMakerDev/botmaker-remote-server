@@ -3,7 +3,7 @@
 # install.sh [jar] — install the server, its launcher, the unit and the hook under ~/.local, for one user.
 #
 # With no argument, downloads the newest release's jar; with one, copies that file (a local build:
-# target/botmaker-remote-server-0.0.0-SNAPSHOT-all.jar). Idempotent: run it again to update.
+# target/botmaker-remote-server-<version>-all.jar). Idempotent: run it again to update.
 #
 # On Fedora or any dnf/apt machine there is a package instead — `botmaker-remote-server.rpm` /`.deb` on the
 # GitHub Release — and it installs the same four files system-wide. This script stays for the case the

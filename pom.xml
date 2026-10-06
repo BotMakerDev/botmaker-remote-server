@@ -27,8 +27,8 @@
         <javalin.version>6.7.0</javalin.version>
         <pty4j.version>0.13.10</pty4j.version>
         <zxing.version>3.5.3</zxing.version>
-        <!-- The release version, injected by ci.yml from the tag; ${project.version} is the cosmetic
-             0.0.0-SNAPSHOT every module here carries. -->
+        <!-- The release version, injected by ci.yml from the tag; ${project.version} was the cosmetic
+             0.0.0-SNAPSHOT until 2026-10-06 and is a -SNAPSHOT on main. -->
         <botmaker.remote.version>dev</botmaker.remote.version>
     </properties>
 

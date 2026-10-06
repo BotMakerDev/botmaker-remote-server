@@ -16,8 +16,8 @@
 # nobody's benefit. Installing the package therefore starts nothing: the person enables it themselves with
 # `systemctl --user enable --now botmaker-remote`, which is also where they consent to the thing listening.
 #
-# THE VERSION comes from the environment, like the cli's: the pom's <version> is the cosmetic
-# 0.0.0-SNAPSHOT, and the workflow sets BOTMAKER_VERSION from the tag that triggered it.
+# THE VERSION comes from the environment, like the cli's: the workflow sets BOTMAKER_VERSION from the tag
+# that triggered it (the pom said a cosmetic 0.0.0-SNAPSHOT until 2026-10-06).
 #
 # THE RPM IS SIGNED WHEN A KEY IS PRESENT and the deb is not — dnf's `gpgcheck` verifies the package's own
 # header signature, apt trusts a signed index. Both facts are botmaker-cli's, discovered by its v0.0.3
