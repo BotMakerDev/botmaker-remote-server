@@ -33,7 +33,7 @@ jobs:
       - name: The executable jar starts and refuses to bind the world
         run: |
           set +e
-          out=$(java -jar target/botmaker-remote-server-0.0.0-SNAPSHOT-all.jar 2>&1)
+          out=$(java -jar target/botmaker-remote-server-*-all.jar 2>&1)
           code=$?
           set -e
           echo "$out"
@@ -56,15 +56,15 @@ jobs:
           java-version: '25'
           cache: maven
 
-      # Shade names the jar from the pom's cosmetic 0.0.0-SNAPSHOT whatever the tag says; rename it once,
-      # here, to the name jreleaser.yml and tools/install.sh both use. The tag reaches the manifest through
-      # -Dbotmaker.remote.version so `/api/status` reports the release rather than "dev".
+      # Shade names the jar from the pom's <version>; rename it once, here, to the name jreleaser.yml and
+      # tools/install.sh both use. The tag reaches the manifest through -Dbotmaker.remote.version so
+      # `/api/status` reports the release rather than "dev".
       - name: Build the executable jar
         run: |
           mvn -B package -DskipTests "-Dbotmaker.remote.version=${GITHUB_REF_NAME#v}"
-          shaded=target/botmaker-remote-server-0.0.0-SNAPSHOT-all.jar
-          if [ ! -f "$shaded" ]; then
-            echo "::error::$shaded was not produced — maven-shade-plugin attached nothing." >&2
+          shaded=$(ls -1 target/botmaker-remote-server-*-all.jar 2>/dev/null | head -1)
+          if [ -z "$shaded" ]; then
+            echo "::error::no target/botmaker-remote-server-*-all.jar was produced — maven-shade-plugin attached nothing." >&2
             ls -la target >&2
             exit 1
           fi

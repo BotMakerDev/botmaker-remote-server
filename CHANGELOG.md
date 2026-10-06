@@ -9,6 +9,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ### Changed
 
+- The pom carries a real version instead of the cosmetic `0.0.0-SNAPSHOT`; CI finds the shaded jar by
+  pattern (umbrella `docs/refactor/43-real-versions.md`). The release assets keep their unversioned names.
 - The reactor coordinate is `com.github.BotMakerDev:botmaker-remote-server` (was `com.github.LiQiyeDev`).
   Nothing resolves it; the release assets are unchanged.
 
