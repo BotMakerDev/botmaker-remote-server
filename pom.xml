@@ -11,7 +11,7 @@
     -->
     <groupId>com.github.BotMakerDev</groupId>
     <artifactId>botmaker-remote-server</artifactId>
-    <version>0.1.3-SNAPSHOT</version>
+    <version>0.2.0</version>
     <name>BotMaker Remote Server</name>
     <description>
         Phone access to the Claude Code terminals on a dev box: one tmux window per Claude account, served
