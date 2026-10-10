@@ -5,6 +5,33 @@ All notable changes to `botmaker-remote-server`.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this module uses
 [semantic versioning](https://semver.org/). `release.sh` refuses to cut a version with no section here.
 
+## [Unreleased]
+
+No source changes since v0.2.0; re-released for updated upstream pins.
+
+### Changed
+
+- The pom carries a real version instead of the cosmetic `0.0.0-SNAPSHOT`; CI finds the shaded jar by
+  pattern (umbrella `docs/refactor/43-real-versions.md`). The release assets keep their unversioned names.
+- The reactor coordinate is `com.github.BotMakerDev:botmaker-remote-server` (was `com.github.LiQiyeDev`).
+  Nothing resolves it; the release assets are unchanged.
+
+No source changes since v0.1.2; re-released for updated upstream pins.
+
+### Added
+
+- **A new session starts in a directory the phone picks.** `POST /api/sessions` takes `cwd`, passed to tmux
+  as `-c`; it must be a directory under the operator's home (real path, so `..` and symlinks out of home are
+  refused) and is home when blank, so an older app still works. `GET /api/dirs?path=` lists a directory's
+  visible sub-directories for the app's browser, and `GET /api/dirs/recent` the last eight directories used,
+  kept in `recent-dirs` beside the token.
+
+### Fixed
+
+- **Claude Code's output can be scrolled from the phone.** tmux draws on the alternate screen, which has no
+  scrollback, so the terminal had nothing to scroll. The phone's own view of the session now has tmux's
+  `mouse` on (the desktop's session keeps its setting), and a wheel report scrolls the pane's history.
+
 ## [0.2.0] — 2026-10-10
 
 ### Changed
