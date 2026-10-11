@@ -4,7 +4,7 @@ Phone access to the Claude Code terminals on a dev box, over Tailscale. The serv
 [botmaker-remote](https://github.com/BotMakerDev/botmaker-remote), the phone app.
 
 **The problem it answers.** Claude Code's Remote Control binds one Claude account; switching accounts with
-[`cswap`](https://github.com/LiQiyeDev/cswap) ends the session. So the phone attaches to *terminals*
+`cswap` ends the session. So the phone attaches to *terminals*
 instead: one tmux window per account, each running `cswap run <slot> -- claude`, and the phone opens
 whichever it likes. Nothing switches, so nothing disconnects.
 
@@ -60,20 +60,13 @@ systemctl --user enable --now botmaker-remote
 journalctl --user -u botmaker-remote -f          # the pairing URL is in the log
 ```
 
-**Debian, Ubuntu** — the apt line depends on whether the release was signed, so take it from
+**Debian, Ubuntu** — take the apt line from
 [the repository page](https://botmakerdev.github.io/botmaker-remote-server/), which prints the snippet that
-matches what is actually published.
+matches what is published.
 
-**Signing.** The repository is **unsigned today**: nothing verifies that a package came from this project,
-and `dnf` is told so — the generated `.repo` sets `gpgcheck=0` and `repo_gpgcheck=0`, and the apt line says
-`[trusted=yes]`. HTTPS proves who *served* the file, not who *built* it. If that is not a trade you want,
-install the release asset by hand, or `tools/install.sh` from a checkout. **The next release signs itself**:
-`GPG_KEY_ID`, `GPG_PASSPHRASE` and `GPG_PRIVATE_KEY` are set on the `BotMakerDev` organization, which this
-repository joined on 2026-09-18, and they hold the key `botmaker-cli` already publishes. With them present
-the release job signs the rpm and both indexes, the page starts printing the verified snippets, and nothing
-else changes. The steps are in
-[`docs/signing.md`](docs/signing.md), including what an already-installed machine has to import when
-`gpgcheck` goes on.
+**Signing.** The rpm and both repository indexes are signed with the key `botmaker-cli`'s repository
+publishes, and the `.repo` turns on `gpgcheck` and `repo_gpgcheck`. [`docs/signing.md`](docs/signing.md) has
+the details, including what a machine installed from an unsigned release has to import.
 
 Later: `sudo dnf upgrade botmaker-remote-server` (or apt's equivalent), then `systemctl --user restart
 botmaker-remote`. The repository carries the **latest release only** — it is an upgrade channel, not an
