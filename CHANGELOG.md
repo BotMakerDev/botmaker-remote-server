@@ -7,6 +7,11 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+### Changed
+
+- Licensed under PolyForm Noncommercial 1.0.0, copyright LiQiyeDev: free for any noncommercial use, commercial use
+  needs a license from LiQiyeDev. Releases up to v0.3.0 stay CC0 1.0.
+
 No source changes since v0.3.0; re-released for updated upstream pins.
 
 No source changes since v0.2.2; re-released for updated upstream pins.

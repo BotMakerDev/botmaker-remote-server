@@ -12,6 +12,12 @@
     <groupId>com.github.BotMakerDev</groupId>
     <artifactId>botmaker-remote-server</artifactId>
     <version>0.3.1-SNAPSHOT</version>
+    <licenses>
+        <license>
+            <name>PolyForm-Noncommercial-1.0.0</name>
+            <url>https://polyformproject.org/licenses/noncommercial/1.0.0</url>
+        </license>
+    </licenses>
     <name>BotMaker Remote Server</name>
     <description>
         Phone access to the Claude Code terminals on a dev box: one tmux window per Claude account, served

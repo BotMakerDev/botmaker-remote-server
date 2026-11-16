@@ -37,7 +37,7 @@ description: |
   Pairs with the botmaker-remote app.
 vendor: BotMaker
 homepage: https://github.com/BotMakerDev/botmaker-remote-server
-license: CC0-1.0
+license: PolyForm-Noncommercial-1.0.0
 
 contents:
   - src: target/botmaker-remote-server-all.jar
