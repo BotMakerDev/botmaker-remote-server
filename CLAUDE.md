@@ -12,7 +12,7 @@ Tailscale address. `README.md` is the operator's document and lists the routes; 
 **A program, not a library.** Nothing resolves it as a dependency, JitPack never builds it, and the GitHub
 Release's three assets — `botmaker-remote-server-all.jar`, `.rpm`, `.deb`, all unversioned names — are the
 artifact. It depends on nothing of ours: Javalin, pty4j, Jackson, ZXing. Reactor position after
-`botmaker-cli`; released with `./release.sh --remote-server`.
+`botmaker-cli`; released with `sluice --remote-server <version>` from the umbrella.
 
 **Packaged with nfpm, not jpackage** (`packaging/nfpm.yaml`) — `botmaker-cli`'s argument, and its rpm
 signing rules: a headless jar with no desktop presence gains nothing from a bundled runtime, and dnf checks
