@@ -153,5 +153,5 @@ phone detaches.
 
 ## Releasing
 
-From the umbrella: `./release.sh --remote-server <version>`. The GitHub Release carries
+From the umbrella: `sluice --remote-server <version> --execute`. The GitHub Release carries
 `botmaker-remote-server-all.jar` under a stable name, which is what `tools/install.sh` downloads.
